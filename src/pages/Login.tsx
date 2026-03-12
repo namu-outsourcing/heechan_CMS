@@ -16,35 +16,52 @@ export default function Login() {
     setError("");
     setIsLoading(true);
 
-    // 1단계: 이메일 화이트리스트 검사 (앞단 차단)
-    if (email.trim().toLowerCase() !== OWNER_EMAIL?.trim().toLowerCase()) {
-      setError("접근 권한이 없습니다. 관리자에게 문의해주세요.");
-      setIsLoading(false);
-      return;
-    }
-
-    // 2단계: Supabase 이메일+비밀번호 인증
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    console.log("로그인 시도 시작:", {
+      inputEmail: email.trim().toLowerCase(),
+      targetEmail: OWNER_EMAIL?.trim().toLowerCase(),
+      isMatch: email.trim().toLowerCase() === OWNER_EMAIL?.trim().toLowerCase(),
     });
 
-    if (authError) {
-      console.error("Login error:", authError);
-      if (authError.message.includes("Email not confirmed")) {
-        setError("이메일 인증이 완료되지 않았습니다. 메일함을 확인해주세요.");
-      } else if (authError.status === 400) {
-        setError(
-          "이메일 또는 비밀번호가 올바르지 않거나, 서버 설정 오류입니다.",
-        );
-      } else {
-        setError(authError.message || "로그인 중 오류가 발생했습니다.");
-      }
+    // 1단계: 이메일 화이트리스트 검사 (앞단 차단)
+    if (
+      !OWNER_EMAIL ||
+      email.trim().toLowerCase() !== OWNER_EMAIL.trim().toLowerCase()
+    ) {
+      console.warn("화이트리스트 검증 실패");
+      setError("접근 권한이 없습니다. 관리자 이메일 설정을 확인해주세요.");
       setIsLoading(false);
       return;
     }
 
-    navigate("/customers");
+    console.log("Supabase 로그인 시도 중...");
+
+    // 2단계: Supabase 이메일+비밀번호 인증
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword(
+        {
+          email: email.trim(),
+          password,
+        },
+      );
+
+      if (authError) {
+        console.error("Supabase 인증 에러 상세:", authError);
+        if (authError.message.includes("Email not confirmed")) {
+          setError("이메일 인증이 완료되지 않았습니다. 메일함을 확인해주세요.");
+        } else {
+          setError(`로그인 실패: ${authError.message}`);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      console.log("로그인 성공! 세션 데이터:", data);
+      navigate("/customers");
+    } catch (err) {
+      console.error("로그인 프로세스 중 예외 발생:", err);
+      setError("시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      setIsLoading(false);
+    }
   };
 
   return (
