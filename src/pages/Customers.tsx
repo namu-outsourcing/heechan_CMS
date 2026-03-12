@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useCustomerStore } from "../hooks/useCustomers";
+import { useVisitStore } from "../hooks/useVisits";
 import { CustomerWithLastVisit } from "../types";
 import CustomerTable from "../components/customers/CustomerTable";
 import CustomerModal from "../components/customers/CustomerModal";
+import CustomerHistoryModal from "../components/customers/CustomerHistoryModal";
 import { Search, Plus } from "lucide-react";
 
 export default function Customers() {
@@ -16,14 +18,22 @@ export default function Customers() {
     deleteCustomer,
   } = useCustomerStore();
 
+  const { fetchVisits } = useVisitStore();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] =
     useState<CustomerWithLastVisit | null>(null);
 
+  // 히스토리 모달 관련 상태
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<CustomerWithLastVisit | null>(null);
+
   useEffect(() => {
     fetchCustomers();
-  }, [fetchCustomers]);
+    fetchVisits();
+  }, [fetchCustomers, fetchVisits]);
 
   // 프론트엔드 단 검색 (단순 필터링)
   const filteredCustomers = customers.filter(
@@ -42,11 +52,20 @@ export default function Customers() {
     setIsModalOpen(true);
   };
 
+  const handleCustomerClick = (c: CustomerWithLastVisit) => {
+    setSelectedCustomer(c);
+    setIsHistoryModalOpen(true);
+  };
+
   const handleSave = async (data: any) => {
     if (editingCustomer) {
-      return await updateCustomer(editingCustomer.id, data);
+      const success = await updateCustomer(editingCustomer.id, data);
+      if (success) fetchCustomers();
+      return success;
     } else {
-      return await addCustomer(data);
+      const success = await addCustomer(data);
+      if (success) fetchCustomers();
+      return success;
     }
   };
 
@@ -56,7 +75,7 @@ export default function Customers() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">고객 관리</h2>
           <p className="text-sm text-gray-500 mt-1">
-            고객 정보를 등록하고 재방문 예정 목록을 확인하세요.
+            고객 명단을 클릭하여 상세 방문 내역을 확인하거나 정보를 수정하세요.
           </p>
         </div>
         <button
@@ -96,6 +115,7 @@ export default function Customers() {
               customers={filteredCustomers}
               onEdit={handleOpenEditModal}
               onDelete={deleteCustomer}
+              onCustomerClick={handleCustomerClick}
             />
           )}
         </div>
@@ -106,6 +126,12 @@ export default function Customers() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         initialData={editingCustomer}
+      />
+
+      <CustomerHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        customer={selectedCustomer}
       />
     </div>
   );
