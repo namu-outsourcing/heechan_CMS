@@ -15,21 +15,25 @@ export default function AuthGuard({ children }: Props) {
   );
 
   useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data }: { data: { session: Session | null } }) => {
-        const session = data.session;
-        if (!session) {
-          setStatus("denied");
-          return;
-        }
-        const userEmail = session.user.email ?? "";
-        if (userEmail.toLowerCase() !== OWNER_EMAIL?.toLowerCase()) {
-          supabase.auth.signOut().then(() => setStatus("denied"));
-          return;
-        }
-        setStatus("allowed");
-      });
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.error("AuthGuard getSession error:", error);
+        setStatus("denied");
+        return;
+      }
+      const session = data.session;
+      if (!session) {
+        setStatus("denied");
+        return;
+      }
+      const userEmail = session.user.email ?? "";
+      if (userEmail.toLowerCase() !== OWNER_EMAIL?.toLowerCase()) {
+        console.warn("Unauthorized email access attempted:", userEmail);
+        supabase.auth.signOut().then(() => setStatus("denied"));
+        return;
+      }
+      setStatus("allowed");
+    });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event: string, session: Session | null) => {
