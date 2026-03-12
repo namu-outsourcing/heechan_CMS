@@ -23,6 +23,7 @@ export default function CustomerTable({ customers, onEdit, onDelete }: Props) {
         <thead className="bg-gray-50 text-gray-600 font-medium">
           <tr>
             <th className="px-4 py-3">고객 정보</th>
+            <th className="px-4 py-3">메모</th>
             <th className="px-4 py-3">최근 방문일</th>
             <th className="px-4 py-3 text-right">관리</th>
           </tr>
@@ -33,13 +34,17 @@ export default function CustomerTable({ customers, onEdit, onDelete }: Props) {
               <td className="px-4 py-3">
                 <div className="font-medium text-gray-900">{c.name}</div>
                 <div className="text-xs text-gray-500">{c.phone}</div>
-                {c.memo && (
+              </td>
+              <td className="px-4 py-3">
+                {c.memo ? (
                   <div
-                    className="text-[11px] text-gray-400 mt-1 italic truncate max-w-[250px]"
+                    className="text-sm text-gray-600 truncate max-w-[300px]"
                     title={c.memo}
                   >
-                    "{c.memo}"
+                    {c.memo}
                   </div>
+                ) : (
+                  <span className="text-gray-300">-</span>
                 )}
               </td>
               <td className="px-4 py-3 text-gray-500">
