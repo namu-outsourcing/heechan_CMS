@@ -15,33 +15,65 @@ export default function AuthGuard({ children }: Props) {
   );
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        console.error("AuthGuard getSession error:", error);
-        setStatus("denied");
-        return;
-      }
-      const session = data.session;
-      if (!session) {
-        setStatus("denied");
-        return;
-      }
-      const userEmail = session.user.email ?? "";
-      if (userEmail.toLowerCase() !== OWNER_EMAIL?.toLowerCase()) {
-        console.warn("Unauthorized email access attempted:", userEmail);
-        supabase.auth.signOut().then(() => setStatus("denied"));
-        return;
-      }
-      setStatus("allowed");
+    console.log("AuthGuard: 세션 체크 시작...", {
+      OWNER_EMAIL_SET: !!OWNER_EMAIL,
     });
 
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("AuthGuard 세션 조회 실패 상세:", {
+            message: error.message,
+            status: error.status,
+            name: error.name,
+          });
+          setStatus("denied");
+          return;
+        }
+
+        const session = data.session;
+        console.log("AuthGuard: 세션 데이터 수신 성공", {
+          hasSession: !!session,
+        });
+
+        if (!session) {
+          setStatus("denied");
+          return;
+        }
+
+        const userEmail = session.user.email ?? "";
+        if (!OWNER_EMAIL) {
+          console.error("VITE_OWNER_EMAIL 환경 변수가 설정되지 않았습니다.");
+          setStatus("denied");
+          return;
+        }
+
+        if (userEmail.toLowerCase() !== OWNER_EMAIL.trim().toLowerCase()) {
+          console.warn("허용되지 않은 이메일 접근:", userEmail);
+          supabase.auth.signOut().then(() => setStatus("denied"));
+          return;
+        }
+
+        setStatus("allowed");
+      })
+      .catch((err) => {
+        console.error("AuthGuard 예외 발생:", err);
+        setStatus("denied");
+      });
+
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event: string, session: Session | null) => {
+      (_event, session) => {
+        console.log("인증 상태 변경됨:", _event);
         if (!session) setStatus("denied");
       },
     );
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      if (listener?.subscription) {
+        listener.subscription.unsubscribe();
+      }
+    };
   }, []);
 
   if (status === "loading") {
