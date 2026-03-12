@@ -6,9 +6,15 @@ interface Props {
   customers: CustomerWithLastVisit[];
   onEdit: (customer: CustomerWithLastVisit) => void;
   onDelete: (id: string) => void;
+  onCustomerClick: (customer: CustomerWithLastVisit) => void;
 }
 
-export default function CustomerTable({ customers, onEdit, onDelete }: Props) {
+export default function CustomerTable({
+  customers,
+  onEdit,
+  onDelete,
+  onCustomerClick,
+}: Props) {
   if (customers.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500 border border-gray-200 border-dashed rounded-lg bg-gray-50/50">
@@ -30,9 +36,15 @@ export default function CustomerTable({ customers, onEdit, onDelete }: Props) {
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
           {customers.map((c) => (
-            <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+            <tr
+              key={c.id}
+              className="hover:bg-blue-50/40 transition-colors cursor-pointer group/row"
+              onClick={() => onCustomerClick(c)}
+            >
               <td className="px-4 py-3">
-                <div className="font-medium text-gray-900">{c.name}</div>
+                <div className="font-medium text-gray-900 group-hover/row:text-blue-600 transition-colors">
+                  {c.name}
+                </div>
                 <div className="text-xs text-gray-500">{c.phone}</div>
               </td>
               <td className="px-4 py-3">
@@ -52,7 +64,10 @@ export default function CustomerTable({ customers, onEdit, onDelete }: Props) {
                   ? format(new Date(c.last_visited_at), "yyyy.MM.dd")
                   : "기록 없음"}
               </td>
-              <td className="px-4 py-3 border-t-0 text-right whitespace-nowrap">
+              <td
+                className="px-4 py-3 border-t-0 text-right whitespace-nowrap"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
                   onClick={() => onEdit(c)}
                   className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors mr-2 rounded-md hover:bg-blue-50"
