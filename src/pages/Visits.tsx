@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useVisitStore, VisitWithCustomer } from "../hooks/useVisits";
+import { VisitSaveData } from "../types";
 import VisitTable from "../components/visits/VisitTable";
 import VisitModal from "../components/visits/VisitModal";
 import NaverImportModal from "../components/customers/NaverImportModal";
@@ -37,7 +38,7 @@ export default function Visits() {
     setIsModalOpen(true);
   };
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: VisitSaveData) => {
     if (editingVisit) {
       return await updateVisit(editingVisit.id, data);
     } else {

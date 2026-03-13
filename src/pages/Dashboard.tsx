@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useVisitStore } from "../hooks/useVisits";
+import { useDashboard } from "../hooks/useDashboard";
 import SalesSummaryCard from "../components/dashboard/SalesSummaryCard";
-import { downloadSalesExcel } from "../utils/excel";
 import {
   Calendar,
   Download,
@@ -13,19 +13,7 @@ import {
   Percent,
   ChevronRight,
 } from "lucide-react";
-import {
-  startOfMonth,
-  endOfMonth,
-  isSameDay,
-  isWithinInterval,
-  parseISO,
-  format,
-  subMonths,
-  subDays,
-  eachMonthOfInterval,
-  startOfToday,
-} from "date-fns";
-import { ko } from "date-fns/locale";
+import { format } from "date-fns";
 import { formatCurrency } from "../utils/format";
 import {
   LineChart,
@@ -42,163 +30,59 @@ import {
 } from "recharts";
 
 const COLORS = [
-  "#6366f1", // Indigo
-  "#0ea5e9", // Sky Blue
-  "#10b981", // Emerald
-  "#f59e0b", // Amber
-  "#ef4444", // Red
-  "#8b5cf6", // Violet
-  "#ec4899", // Pink
-  "#14b8a6", // Teal
+  "#6366f1",
+  "#0ea5e9",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
 ];
 
+const ChartGradients = () => (
+  <defs>
+    {COLORS.map((color, i) => (
+      <linearGradient key={`grad-${i}`} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={color} stopOpacity={1} />
+        <stop offset="100%" stopColor={color} stopOpacity={0.7} />
+      </linearGradient>
+    ))}
+    <linearGradient id="grad-card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
+      <stop offset="100%" stopColor="#4f46e5" stopOpacity={0.8} />
+    </linearGradient>
+    <linearGradient id="grad-cash" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+      <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
+    </linearGradient>
+  </defs>
+);
+
 export default function Dashboard() {
-  const { visits, isLoading, fetchVisits } = useVisitStore();
-  const [filterMonth, setFilterMonth] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  });
+  const { isLoading, fetchVisits } = useVisitStore();
+  const {
+    filterMonth,
+    setFilterMonth,
+    filterDate,
+    monthlyVisits,
+    todayStats,
+    monthlyStats,
+    trendData,
+    serviceStats,
+    topServices,
+    paymentMethodData,
+    todayGrowth,
+    monthGrowth,
+    handleExportExcel,
+  } = useDashboard();
+
+  const [activeServiceIdx, setActiveServiceIdx] = useState(-1);
+  const [activePaymentIdx, setActivePaymentIdx] = useState(-1);
 
   useEffect(() => {
     fetchVisits();
   }, [fetchVisits]);
-
-  // 날짜 기준 필터링 데이터 준비
-  const today = startOfToday();
-  const filterDate = new Date(filterMonth + "-01");
-  const monthStart = startOfMonth(filterDate);
-  const monthEnd = endOfMonth(filterDate);
-
-  // 1. 선택한 "이 달의 매출"
-  const monthlyVisits = visits.filter((v) => {
-    const vDate = parseISO(v.visited_at);
-    return isWithinInterval(vDate, { start: monthStart, end: monthEnd });
-  });
-
-  // 2. "오늘의 매출"
-  const todayVisits = visits.filter((v) =>
-    isSameDay(parseISO(v.visited_at), today),
-  );
-
-  // 3. 최근 6개월 추이 데이터 가공
-  const trendData = useMemo(() => {
-    const last6Months = eachMonthOfInterval({
-      start: subMonths(today, 5),
-      end: today,
-    });
-
-    return last6Months.map((month) => {
-      const mStart = startOfMonth(month);
-      const mEnd = endOfMonth(month);
-      const mVisits = visits.filter((v) =>
-        isWithinInterval(parseISO(v.visited_at), { start: mStart, end: mEnd }),
-      );
-
-      return {
-        name: format(month, "MMM", { locale: ko }),
-        total: mVisits.reduce((sum, v) => sum + v.payment_amount, 0),
-        points: mVisits.reduce((sum, v) => sum + (v.points_used || 0), 0),
-        count: mVisits.length,
-      };
-    });
-  }, [visits, today]);
-
-  // 4. 시술별 결과 집계 (이번 달 기준)
-  const serviceStats = useMemo(() => {
-    const stats: Record<string, { value: number; count: number }> = {};
-    monthlyVisits.forEach((v) => {
-      if (v.services && v.services.length > 0) {
-        v.services.forEach((s) => {
-          if (!stats[s]) stats[s] = { value: 0, count: 0 };
-          stats[s].count += 1;
-          // 결제 금액을 시술 개수로 나눠서 대략적인 비중 산출 (간이 방식)
-          stats[s].value += v.payment_amount / v.services!.length;
-        });
-      } else {
-        if (!stats["기타"]) stats["기타"] = { value: 0, count: 0 };
-        stats["기타"].value += v.payment_amount;
-        stats["기타"].count += 1;
-      }
-    });
-
-    const list = Object.entries(stats)
-      .map(([name, data]) => ({ name, value: data.value, count: data.count }))
-      .sort((a, b) => b.value - a.value);
-
-    const totalValue = list.reduce((sum, item) => sum + item.value, 0);
-    return list.map(item => ({
-      ...item,
-      percent: totalValue > 0 ? item.value / totalValue : 0
-    }));
-  }, [monthlyVisits]);
-
-  const calcStats = (targetVisits: typeof visits) => {
-    return targetVisits.reduce(
-      (acc, v) => {
-        const amount = v.payment_amount || 0;
-        const used = v.points_used || 0;
-        acc.total += amount;
-        acc.points += used;
-        acc.gross += amount + used;
-        if (v.payment_method === "card") acc.card += amount;
-        else acc.cash += amount;
-        return acc;
-      },
-      { total: 0, card: 0, cash: 0, points: 0, gross: 0 },
-    );
-  };
-
-  const todayStats = calcStats(todayVisits);
-  const monthlyStats = calcStats(monthlyVisits);
-
-  const handleExportExcel = () => {
-    if (monthlyVisits.length === 0)
-      return alert("다운로드할 데이터가 없습니다.");
-    downloadSalesExcel(
-      monthlyVisits,
-      `매출내역_${filterMonth.replace("-", "")}`,
-    );
-  };
-
-  // 1. 전일 매출 비교 (오늘 vs 어제)
-  const yesterdayVisits = useMemo(() => {
-    const yest = subDays(today, 1);
-    return visits.filter((v) => isSameDay(parseISO(v.visited_at), yest));
-  }, [visits, today]);
-
-  const yesterdayStats = calcStats(yesterdayVisits);
-  
-  const todayGrowth = yesterdayStats.total === 0 
-    ? 100 
-    : ((todayStats.total - yesterdayStats.total) / yesterdayStats.total) * 100;
-
-  // 2. 전월 매출 비교 (filterMonth vs filterMonth - 1)
-  const lastMonthStats = useMemo(() => {
-    const lastMonthDate = subMonths(filterDate, 1);
-    const mStart = startOfMonth(lastMonthDate);
-    const mEnd = endOfMonth(lastMonthDate);
-    const lastMVisits = visits.filter((v) =>
-      isWithinInterval(parseISO(v.visited_at), { start: mStart, end: mEnd }),
-    );
-    return calcStats(lastMVisits);
-  }, [visits, filterDate]);
-
-  const monthGrowth = lastMonthStats.total === 0
-    ? 100
-    : ((monthlyStats.total - lastMonthStats.total) / lastMonthStats.total) * 100;
-
-  // 3. 시술별 수익 TOP 3 (Bar Chart 데이터 재사용)
-  const topServices = serviceStats.slice(0, 3);
-  
-  // 4. 결제 수단 비중 (Pie Chart용)
-  const paymentMethodData = [
-    { name: "카드", value: monthlyStats.card },
-    { name: "현금/계좌", value: monthlyStats.cash },
-  ];
-
-  // --- 차트 인터랙션 상태 (고도화) ---
-  const [activeServiceIdx, setActiveServiceIdx] = useState(-1);
-  const [activePaymentIdx, setActivePaymentIdx] = useState(-1);
 
   if (isLoading) {
     return (
@@ -207,26 +91,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  // 그라데이션 정의 컴포넌트
-  const ChartGradients = () => (
-    <defs>
-      {COLORS.map((color, i) => (
-        <linearGradient key={`grad-${i}`} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={1} />
-          <stop offset="100%" stopColor={color} stopOpacity={0.7} />
-        </linearGradient>
-      ))}
-      <linearGradient id="grad-card" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
-        <stop offset="100%" stopColor="#4f46e5" stopOpacity={0.8} />
-      </linearGradient>
-      <linearGradient id="grad-cash" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
-        <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
-      </linearGradient>
-    </defs>
-  );
 
   return (
     <div className="space-y-8 pb-12">
@@ -319,15 +183,11 @@ export default function Dashboard() {
               >
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#f1f5f9"
-                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
@@ -339,35 +199,27 @@ export default function Dashboard() {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 500 }}
-                  tickFormatter={(val) => `${val / 10000}만`}
+                  tickFormatter={(val: number) => `${val / 10000}만`}
                 />
                 <Tooltip
-                  cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+                  cursor={{ stroke: "#e2e8f0", strokeWidth: 1 }}
                   contentStyle={{
                     backgroundColor: "rgba(255, 255, 255, 0.9)",
                     backdropFilter: "blur(8px)",
                     border: "1px solid #f1f5f9",
                     borderRadius: "16px",
                     boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                    padding: "12px"
+                    padding: "12px",
                   }}
-                  itemStyle={{ fontSize: '13px', fontWeight: 'bold' }}
-                  formatter={(value: any) => [
-                    formatCurrency(value),
-                    "매출액",
-                  ]}
+                  itemStyle={{ fontSize: "13px", fontWeight: "bold" }}
+                  formatter={(value) => [formatCurrency(typeof value === "number" ? value : 0), "매출액"]}
                 />
                 <Line
                   type="monotone"
                   dataKey="total"
                   stroke="#3b82f6"
                   strokeWidth={4}
-                  dot={{
-                    r: 5,
-                    fill: "#3b82f6",
-                    strokeWidth: 3,
-                    stroke: "#fff",
-                  }}
+                  dot={{ r: 5, fill: "#3b82f6", strokeWidth: 3, stroke: "#fff" }}
                   activeDot={{ r: 8, strokeWidth: 0 }}
                   animationDuration={1500}
                 />
@@ -383,7 +235,7 @@ export default function Dashboard() {
           </div>
           <h3 className="text-lg font-bold text-gray-800 mb-1">데이터 필터</h3>
           <p className="text-xs text-gray-500 mb-6">원하시는 월의 상세 데이터를 확인하세요.</p>
-          
+
           <div className="space-y-5">
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
@@ -423,11 +275,11 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="h-80 w-full relative">
-            {/* 도넛 중앙 텍스트 */}
             <div className="absolute top-1/2 left-[30%] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
               <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Total</div>
               <div className="text-xl font-black text-gray-800 leading-none">
-                {Math.round(serviceStats.reduce((sum, s) => sum + s.value, 0) / 10000)}<span className="text-xs font-bold text-gray-400 ml-0.5">만</span>
+                {Math.round(serviceStats.reduce((sum, s) => sum + s.value, 0) / 10000)}
+                <span className="text-xs font-bold text-gray-400 ml-0.5">만</span>
               </div>
             </div>
 
@@ -451,10 +303,13 @@ export default function Dashboard() {
                         key={`cell-${index}`}
                         fill={`url(#grad-${index % COLORS.length})`}
                         style={{
-                           filter: activeServiceIdx === index ? 'drop-shadow(0px 8px 12px rgba(0,0,0,0.15))' : 'none',
-                           transition: 'all 0.3s ease',
-                           transform: activeServiceIdx === index ? 'scale(1.05)' : 'scale(1)',
-                           transformOrigin: 'center'
+                          filter:
+                            activeServiceIdx === index
+                              ? "drop-shadow(0px 8px 12px rgba(0,0,0,0.15))"
+                              : "none",
+                          transition: "all 0.3s ease",
+                          transform: activeServiceIdx === index ? "scale(1.05)" : "scale(1)",
+                          transformOrigin: "center",
                         }}
                       />
                     ))}
@@ -465,29 +320,33 @@ export default function Dashboard() {
                       backdropFilter: "blur(8px)",
                       border: "none",
                       borderRadius: "12px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                     }}
-                    formatter={(value: any) =>
-                      `${Math.round(value).toLocaleString()}원`
-                    }
+                    formatter={(value) => `${Math.round(typeof value === "number" ? value : 0).toLocaleString()}원`}
                   />
-                  <Legend 
-                    verticalAlign="middle" 
-                    align="right" 
+                  <Legend
+                    verticalAlign="middle"
+                    align="right"
                     layout="vertical"
                     iconType="circle"
                     wrapperStyle={{
-                      paddingLeft: '20px',
-                      maxHeight: '100%',
-                      overflowY: 'auto',
-                      scrollbarWidth: 'none',
-                      msOverflowStyle: 'none'
+                      paddingLeft: "20px",
+                      maxHeight: "100%",
+                      overflowY: "auto",
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
                     }}
-                    formatter={(value, entry: any) => {
+                    formatter={(value: string, entry: { payload?: { percent?: number } }) => {
                       const percent = entry.payload?.percent;
-                      const displayPercent = isNaN(percent) ? 0 : Math.round(percent * 100);
+                      const displayPercent = isNaN(percent ?? NaN) ? 0 : Math.round((percent ?? 0) * 100);
                       return (
-                        <span className={`text-[11px] font-bold transition-colors inline-block pb-1 ${activeServiceIdx === serviceStats.findIndex(s => s.name === value) ? 'text-indigo-600' : 'text-gray-500'}`}>
+                        <span
+                          className={`text-[11px] font-bold transition-colors inline-block pb-1 ${
+                            activeServiceIdx === serviceStats.findIndex((s) => s.name === value)
+                              ? "text-indigo-600"
+                              : "text-gray-500"
+                          }`}
+                        >
                           {value} ({displayPercent}%)
                         </span>
                       );
@@ -503,20 +362,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 결제 수단 비중 (도넛 차트 추가) */}
+        {/* 결제 수단 비중 */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
-           <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-gray-800 flex items-center">
               <Percent className="w-5 h-5 mr-2 text-emerald-500" />
               결제 수단 비중
             </h3>
           </div>
           <div className="h-52 w-full mt-2 relative">
-             {/* 도넛 중앙 아이콘 */}
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] pointer-events-none">
-                <Percent className="w-6 h-6 text-gray-100" />
-             </div>
-
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] pointer-events-none">
+              <Percent className="w-6 h-6 text-gray-100" />
+            </div>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <ChartGradients />
@@ -531,52 +388,72 @@ export default function Dashboard() {
                   onMouseEnter={(_, index) => setActivePaymentIdx(index)}
                   onMouseLeave={() => setActivePaymentIdx(-1)}
                 >
-                  <Cell 
-                    fill="url(#grad-card)" 
+                  <Cell
+                    fill="url(#grad-card)"
                     style={{
-                      transition: 'all 0.3s ease',
-                      transform: activePaymentIdx === 0 ? 'scale(1.08)' : 'scale(1)',
-                      transformOrigin: 'center'
+                      transition: "all 0.3s ease",
+                      transform: activePaymentIdx === 0 ? "scale(1.08)" : "scale(1)",
+                      transformOrigin: "center",
                     }}
                   />
-                  <Cell 
-                    fill="url(#grad-cash)" 
+                  <Cell
+                    fill="url(#grad-cash)"
                     style={{
-                      transition: 'all 0.3s ease',
-                      transform: activePaymentIdx === 1 ? 'scale(1.08)' : 'scale(1)',
-                      transformOrigin: 'center'
+                      transition: "all 0.3s ease",
+                      transform: activePaymentIdx === 1 ? "scale(1.08)" : "scale(1)",
+                      transformOrigin: "center",
                     }}
                   />
                 </Pie>
-                <Tooltip 
-                   formatter={(value: any) => `${value.toLocaleString()}원`}
-                />
+                <Tooltip formatter={(value) => `${(typeof value === "number" ? value : 0).toLocaleString()}원`} />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between text-xs px-1">
-              <div className={`flex items-center font-bold transition-colors ${activePaymentIdx === 0 ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div
+                className={`flex items-center font-bold transition-colors ${
+                  activePaymentIdx === 0 ? "text-blue-600" : "text-gray-400"
+                }`}
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
                 카드 결제
               </div>
-              <span className={`font-extrabold transition-colors ${activePaymentIdx === 0 ? 'text-blue-600' : 'text-gray-900'}`}>
-                {monthlyStats.total > 0 ? Math.round((monthlyStats.card / monthlyStats.total) * 100) : 0}%
+              <span
+                className={`font-extrabold transition-colors ${
+                  activePaymentIdx === 0 ? "text-blue-600" : "text-gray-900"
+                }`}
+              >
+                {monthlyStats.total > 0
+                  ? Math.round((monthlyStats.card / monthlyStats.total) * 100)
+                  : 0}
+                %
               </span>
             </div>
             <div className="flex items-center justify-between text-xs px-1">
-              <div className={`flex items-center font-bold transition-colors ${activePaymentIdx === 1 ? 'text-emerald-600' : 'text-gray-400'}`}>
+              <div
+                className={`flex items-center font-bold transition-colors ${
+                  activePaymentIdx === 1 ? "text-emerald-600" : "text-gray-400"
+                }`}
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
                 현금 / 계좌
               </div>
-              <span className={`font-extrabold transition-colors ${activePaymentIdx === 1 ? 'text-emerald-600' : 'text-gray-900'}`}>
-                {monthlyStats.total > 0 ? Math.round((monthlyStats.cash / monthlyStats.total) * 100) : 0}%
+              <span
+                className={`font-extrabold transition-colors ${
+                  activePaymentIdx === 1 ? "text-emerald-600" : "text-gray-900"
+                }`}
+              >
+                {monthlyStats.total > 0
+                  ? Math.round((monthlyStats.cash / monthlyStats.total) * 100)
+                  : 0}
+                %
               </span>
             </div>
           </div>
         </div>
 
-        {/* 인기 시술 TOP 3 위젯 */}
+        {/* 인기 시술 TOP 3 */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-gray-800 flex items-center">
@@ -587,35 +464,44 @@ export default function Dashboard() {
           <div className="space-y-4">
             {topServices.length > 0 ? (
               topServices.map((service, idx) => (
-                <div key={service.name} className="relative overflow-hidden p-4 bg-gray-50/50 rounded-xl border border-gray-50 group hover:bg-white hover:shadow-sm transition-all">
+                <div
+                  key={service.name}
+                  className="relative overflow-hidden p-4 bg-gray-50/50 rounded-xl border border-gray-50 group hover:bg-white hover:shadow-sm transition-all"
+                >
                   <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center">
-                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black mr-3 ${
-                        idx === 0 ? "bg-amber-100 text-amber-600" :
-                        idx === 1 ? "bg-slate-100 text-slate-500" :
-                        "bg-orange-100 text-orange-600"
-                      }`}>
+                      <div
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black mr-3 ${
+                          idx === 0
+                            ? "bg-amber-100 text-amber-600"
+                            : idx === 1
+                              ? "bg-slate-100 text-slate-500"
+                              : "bg-orange-100 text-orange-600"
+                        }`}
+                      >
                         {idx + 1}
                       </div>
                       <div>
                         <div className="text-sm font-extrabold text-gray-800">{service.name}</div>
-                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">수행 횟수: {service.count}회</div>
+                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                          수행 횟수: {service.count}회
+                        </div>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
                   </div>
                   <div className="mt-2.5 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${
-                        idx === 0 ? "bg-amber-400" : "bg-blue-400"
-                      }`}
+                    <div
+                      className={`h-full rounded-full ${idx === 0 ? "bg-amber-400" : "bg-blue-400"}`}
                       style={{ width: `${(service.count / topServices[0].count) * 100}%` }}
                     />
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-xs text-gray-400 font-medium">데이터 대기 중...</div>
+              <div className="text-center py-8 text-xs text-gray-400 font-medium">
+                데이터 대기 중...
+              </div>
             )}
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState, ReactNode } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { useNavigate } from "react-router-dom";
 
@@ -8,11 +9,10 @@ interface Props {
 
 export default function AuthGuard({ children }: Props) {
   const navigate = useNavigate();
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 1. 초기 세션 체크
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setIsLoading(false);
@@ -21,8 +21,9 @@ export default function AuthGuard({ children }: Props) {
       }
     });
 
-    // 2. 인증 상태 변경 감지 리스너
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (!session) {
         navigate("/login");

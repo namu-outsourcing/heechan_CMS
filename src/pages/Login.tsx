@@ -16,36 +16,27 @@ export default function Login() {
     setError("");
     setIsLoading(true);
 
-    console.log("로그인 시도 시작:", {
-      inputEmail: email.trim().toLowerCase(),
-      allowedEmails: ALLOWED_EMAILS,
-      isMatch: ALLOWED_EMAILS.some(e => e.trim().toLowerCase() === email.trim().toLowerCase()),
-    });
-
     // 1단계: 이메일 화이트리스트 검사 (앞단 차단)
     if (
       ALLOWED_EMAILS.length === 0 ||
-      !ALLOWED_EMAILS.some(e => e.trim().toLowerCase() === email.trim().toLowerCase())
+      !ALLOWED_EMAILS.some(
+        (allowedEmail) =>
+          allowedEmail.trim().toLowerCase() === email.trim().toLowerCase(),
+      )
     ) {
-      console.warn("화이트리스트 검증 실패");
       setError("접근 권한이 없습니다. 관리자 이메일 설정을 확인해주세요.");
       setIsLoading(false);
       return;
     }
 
-    console.log("Supabase 로그인 시도 중...");
-
     // 2단계: Supabase 이메일+비밀번호 인증
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword(
-        {
-          email: email.trim(),
-          password,
-        },
-      );
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
       if (authError) {
-        console.error("Supabase 인증 에러 상세:", authError);
         if (authError.message.includes("Email not confirmed")) {
           setError("이메일 인증이 완료되지 않았습니다. 메일함을 확인해주세요.");
         } else {
@@ -55,10 +46,8 @@ export default function Login() {
         return;
       }
 
-      console.log("로그인 성공! 세션 데이터:", data);
       navigate("/customers");
-    } catch (err) {
-      console.error("로그인 프로세스 중 예외 발생:", err);
+    } catch {
       setError("시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
       setIsLoading(false);
     }

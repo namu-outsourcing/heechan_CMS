@@ -3,7 +3,8 @@ import * as XLSX from "xlsx";
 import { X, FileSpreadsheet, Key, AlertCircle, CheckCircle2, UserPlus, RefreshCw } from "lucide-react";
 import { useCustomerStore } from "../../hooks/useCustomers";
 import { useVisitStore } from "../../hooks/useVisits";
-import { Customer } from "../../types";
+import { supabase } from "../../lib/supabase";
+import { Customer, NaverExcelRow } from "../../types";
 
 interface NaverRecord {
   name: string;
@@ -52,7 +53,7 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
       const workbook = XLSX.read(data, { password: naverId });
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
-      const json = XLSX.utils.sheet_to_json<any>(worksheet);
+      const json = XLSX.utils.sheet_to_json<NaverExcelRow>(worksheet);
 
       // 네이버 엑셀 컬럼 매핑 (추정: 네이버 엑셀 양식에 맞게 조정 필요)
       // 실제 네이버 엑셀 헤더명을 기준으로 파싱 로직 작성
@@ -61,7 +62,7 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
         phone: row["연락처"] || "",
         serviceName: row["상품명"] || row["서비스명"] || "기타",
         visitedAt: row["이용완료일시"] || row["방문일시"] || new Date().toISOString(),
-        amount: parseInt(row["결제금액"] || "0"),
+        amount: parseInt(String(row["결제금액"] ?? 0)),
       })).filter(r => r.name);
 
       // 기존 고객과 매핑 로직
@@ -92,8 +93,7 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
 
       setMappings(results);
       setStep("preview");
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("엑셀 파일을 읽는 중 오류가 발생했습니다. 비밀번호(네이버 ID)가 맞는지 확인해주세요.");
     } finally {
       setIsProcessing(false);
@@ -116,7 +116,6 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
 
         // 신규 고객인 경우 생성
         if (!customerId) {
-          const { supabase } = await import("../../lib/supabase");
           const { data: newCustomer } = await supabase
             .from("customers")
             .insert({ name: m.record.name, phone: m.record.phone })
@@ -136,8 +135,8 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
           });
           successCount++;
         }
-      } catch (e) {
-        console.error("Import error for record:", m.record.name, e);
+      } catch {
+        // 개별 레코드 임포트 실패 시 다음 레코드 계속 처리
       }
     }
 

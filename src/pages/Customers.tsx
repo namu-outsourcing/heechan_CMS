@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCustomerStore } from "../hooks/useCustomers";
 import { useVisitStore } from "../hooks/useVisits";
-import { CustomerWithLastVisit } from "../types";
+import { CustomerWithLastVisit, CustomerSaveData } from "../types";
 import CustomerTable from "../components/customers/CustomerTable";
 import CustomerModal from "../components/customers/CustomerModal";
 import CustomerHistoryModal from "../components/customers/CustomerHistoryModal";
@@ -57,7 +57,7 @@ export default function Customers() {
     setIsHistoryModalOpen(true);
   };
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: CustomerSaveData) => {
     if (editingCustomer) {
       return await updateCustomer(editingCustomer.id, data);
     } else {

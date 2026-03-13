@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
-import { Visit } from "../types";
+import { Visit, VisitSaveData } from "../types";
 import { useCustomerStore } from "./useCustomers";
 
 export interface VisitWithCustomer extends Visit {
@@ -12,7 +12,7 @@ interface VisitState {
   isLoading: boolean;
   error: string | null;
   fetchVisits: () => Promise<void>;
-  addVisit: (data: Omit<Visit, "id" | "created_at">) => Promise<boolean>;
+  addVisit: (data: VisitSaveData) => Promise<boolean>;
   updateVisit: (id: string, data: Partial<Visit>) => Promise<boolean>;
   deleteVisit: (id: string) => Promise<boolean>;
 }
@@ -27,19 +27,14 @@ export const useVisitStore = create<VisitState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from("visits")
-        // customers의 이름, 연락처 정보를 함께 조인
-        .select(
-          `
-          *,
-          customers(name, phone)
-        `,
-        )
+        .select(`*, customers(name, phone)`)
         .order("visited_at", { ascending: false });
 
       if (error) throw error;
       set({ visits: data as VisitWithCustomer[] });
-    } catch (err: any) {
-      set({ error: err.message });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "오류가 발생했습니다.";
+      set({ error: message });
     } finally {
       set({ isLoading: false });
     }
@@ -48,16 +43,13 @@ export const useVisitStore = create<VisitState>((set, get) => ({
   addVisit: async (visitData) => {
     try {
       const { error } = await supabase.from("visits").insert(visitData);
-
       if (error) throw error;
-      
-      // 관련 상태 모두 최신화
       await get().fetchVisits();
       await useCustomerStore.getState().fetchCustomers();
-      
       return true;
-    } catch (err: any) {
-      set({ error: err.message || "An error occurred" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "오류가 발생했습니다.";
+      set({ error: message });
       return false;
     }
   },
@@ -77,15 +69,13 @@ export const useVisitStore = create<VisitState>((set, get) => ({
           points_used: updatedData.points_used,
         })
         .eq("id", id);
-
       if (error) throw error;
-      
       await get().fetchVisits();
       await useCustomerStore.getState().fetchCustomers();
-      
       return true;
-    } catch (err: any) {
-      set({ error: err.message || "An error occurred" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "오류가 발생했습니다.";
+      set({ error: message });
       return false;
     }
   },
@@ -93,15 +83,13 @@ export const useVisitStore = create<VisitState>((set, get) => ({
   deleteVisit: async (id) => {
     try {
       const { error } = await supabase.from("visits").delete().eq("id", id);
-
       if (error) throw error;
-      
       await get().fetchVisits();
       await useCustomerStore.getState().fetchCustomers();
-      
       return true;
-    } catch (err: any) {
-      set({ error: err.message || "An error occurred" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "오류가 발생했습니다.";
+      set({ error: message });
       return false;
     }
   },
