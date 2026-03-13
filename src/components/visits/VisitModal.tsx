@@ -105,18 +105,25 @@ export default function VisitModal({
     }
   }, [isOpen, initialData]);
 
+  // 시술 금액 - 포인트 사용 = 실 결제 금액 자동 계산 (의존성: serviceTotal, pointsUsed)
   useEffect(() => {
-    if (serviceTotal) {
-      const total = parseInt(serviceTotal) || 0;
-      const used = parseInt(pointsUsed) || 0;
-      setPaymentAmount((total - used).toString());
-    }
+    const total = parseInt(serviceTotal) || 0;
+    const used = parseInt(pointsUsed) || 0;
+    // 포인트 사용 금액이 변경되었거나, 정가가 변경되었을 때만 강제 업데이트
+    setPaymentAmount((total - used).toString());
   }, [serviceTotal, pointsUsed]);
 
+  // 시술 선택 제어 + 금액 자동 반영
   const toggleService = (service: ServiceCategory) => {
     setSelectedServices((prev) => {
       const exists = prev.find((s) => s.id === service.id);
-      return exists ? prev.filter((s) => s.id !== service.id) : [...prev, service];
+      const updated = exists ? prev.filter((s) => s.id !== service.id) : [...prev, service];
+      
+      // 자동 금액 업데이트 (사용자가 수동으로 고치기 전까지는 선택항목을 따름)
+      const total = updated.reduce((acc, s) => acc + s.price, 0);
+      setServiceTotal(total > 0 ? total.toString() : "");
+      
+      return updated;
     });
   };
 
@@ -324,18 +331,24 @@ export default function VisitModal({
               })}
             </div>
             {selectedServices.length > 0 && (
-              <div className="flex items-center px-3 py-2 bg-blue-50/50 rounded-xl border border-blue-100/50">
-                <span className="text-[10px] font-black text-blue-600 uppercase mr-3">선택 합계</span>
-                <span className="text-sm font-extrabold text-blue-700">
-                  {formatCurrency(selectedServices.reduce((acc, s) => acc + s.price, 0))}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setServiceTotal(selectedServices.reduce((acc, s) => acc + s.price, 0).toString())}
-                  className="ml-auto text-[10px] font-black text-white bg-blue-600 px-3 py-1.5 rounded-lg active:scale-95 transition-transform shadow-sm"
-                >
-                  금액 반영
-                </button>
+              <div className="flex items-center px-4 py-3 bg-blue-50/80 rounded-2xl border border-blue-100/50 shadow-sm animate-in fade-in zoom-in-95">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-tighter">선택 항목 합계</span>
+                  <span className="text-base font-black text-blue-700 leading-none mt-1">
+                    {formatCurrency(selectedServices.reduce((acc, s) => acc + s.price, 0))}
+                  </span>
+                </div>
+                <div className="ml-auto flex items-center space-x-2">
+                  <div className="text-[10px] text-blue-400 font-bold italic mr-1">금액 자동 반영됨</div>
+                  <button
+                    type="button"
+                    onClick={() => setServiceTotal(selectedServices.reduce((acc, s) => acc + s.price, 0).toString())}
+                    className="bg-blue-600 text-white p-2 rounded-xl active:scale-95 transition-transform shadow-md"
+                    title="금액 다시 불러오기"
+                  >
+                    <Calculator className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -401,16 +414,20 @@ export default function VisitModal({
               </div>
             </div>
 
-            {serviceTotal && pointsUsed && parseInt(pointsUsed) > 0 && (
+            {serviceTotal && (
               <div className="flex items-center justify-between text-[11px] font-bold px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm animate-in zoom-in-95 duration-300">
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-400">{parseInt(serviceTotal).toLocaleString()}원(정가)</span>
-                  <span className="text-gray-300">/</span>
-                  <span className="text-rose-500">-{parseInt(pointsUsed).toLocaleString()}P(차감)</span>
+                  {parseInt(pointsUsed) > 0 && (
+                    <>
+                      <span className="text-gray-300">/</span>
+                      <span className="text-rose-500">-{parseInt(pointsUsed).toLocaleString()}P(차감)</span>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center space-x-1.5 text-blue-600 text-xs font-black">
                   <span className="text-gray-300">=</span>
-                  <span>최종 {parseInt(paymentAmount).toLocaleString()}원 결제</span>
+                  <span>{parseInt(paymentAmount) === (parseInt(serviceTotal) - (parseInt(pointsUsed) || 0)) ? "최종" : "조정됨"} {parseInt(paymentAmount).toLocaleString()}원 결제</span>
                 </div>
               </div>
             )}
