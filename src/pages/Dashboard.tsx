@@ -7,8 +7,11 @@ import {
   Download,
   TrendingUp,
   Filter,
-  BarChart3,
   PieChart as PieIcon,
+  Trophy,
+  Users,
+  Percent,
+  ChevronRight,
 } from "lucide-react";
 import {
   startOfMonth,
@@ -18,6 +21,7 @@ import {
   parseISO,
   format,
   subMonths,
+  subDays,
   eachMonthOfInterval,
   startOfToday,
 } from "date-fns";
@@ -30,8 +34,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -144,6 +146,42 @@ export default function Dashboard() {
     );
   };
 
+  // 1. 전일 매출 비교 (오늘 vs 어제)
+  const yesterdayVisits = useMemo(() => {
+    const yest = subDays(today, 1);
+    return visits.filter((v) => isSameDay(parseISO(v.visited_at), yest));
+  }, [visits, today]);
+
+  const yesterdayStats = calcStats(yesterdayVisits);
+  
+  const todayGrowth = yesterdayStats.total === 0 
+    ? 100 
+    : ((todayStats.total - yesterdayStats.total) / yesterdayStats.total) * 100;
+
+  // 2. 전월 매출 비교 (filterMonth vs filterMonth - 1)
+  const lastMonthStats = useMemo(() => {
+    const lastMonthDate = subMonths(filterDate, 1);
+    const mStart = startOfMonth(lastMonthDate);
+    const mEnd = endOfMonth(lastMonthDate);
+    const lastMVisits = visits.filter((v) =>
+      isWithinInterval(parseISO(v.visited_at), { start: mStart, end: mEnd }),
+    );
+    return calcStats(lastMVisits);
+  }, [visits, filterDate]);
+
+  const monthGrowth = lastMonthStats.total === 0
+    ? 100
+    : ((monthlyStats.total - lastMonthStats.total) / lastMonthStats.total) * 100;
+
+  // 3. 시술별 수익 TOP 3 (Bar Chart 데이터 재사용)
+  const topServices = serviceStats.slice(0, 3);
+  
+  // 4. 결제 수단 비중 (Pie Chart용)
+  const paymentMethodData = [
+    { name: "카드", value: monthlyStats.card },
+    { name: "현금/계좌", value: monthlyStats.cash },
+  ];
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -169,6 +207,8 @@ export default function Dashboard() {
           cardAmount={todayStats.card}
           cashAmount={todayStats.cash}
           icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
+          change={todayGrowth}
+          trend={todayGrowth > 0 ? "up" : todayGrowth < 0 ? "down" : "neutral"}
         />
         <SalesSummaryCard
           title={`${format(filterDate, "L월")} 매출`}
@@ -176,23 +216,32 @@ export default function Dashboard() {
           cardAmount={monthlyStats.card}
           cashAmount={monthlyStats.cash}
           icon={<Calendar className="w-5 h-5 text-indigo-600" />}
+          change={monthGrowth}
+          trend={monthGrowth > 0 ? "up" : monthGrowth < 0 ? "down" : "neutral"}
         />
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col justify-center">
-          <div className="flex items-center space-x-3 mb-2 text-gray-400">
-            <BarChart3 className="w-5 h-5" />
-            <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              이 달의 고객수
-            </span>
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2.5 bg-gray-50 text-gray-400 rounded-xl">
+              <Users className="w-5 h-5 ml-0" />
+            </div>
+            <div className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              Monthly Active
+            </div>
           </div>
-          <p className="text-3xl font-extrabold text-gray-900">
+          <div className="mb-1">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+              이 달의 고객수
+            </h3>
+          </div>
+          <p className="text-3xl font-extrabold text-gray-900 tracking-tight">
             {monthlyVisits.length}
-            <span className="text-lg font-medium text-gray-400 ml-1">건</span>
+            <span className="text-base font-medium text-gray-400 ml-1">건</span>
           </p>
-          <div className="mt-3 flex items-center text-xs">
-            <span className="text-gray-400">
-              평균 객단가:{" "}
+          <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+            <span className="text-xs text-gray-400 font-medium">평균 객단가</span>
+            <span className="text-sm font-bold text-gray-700">
               {monthlyVisits.length > 0
-                ? (monthlyStats.total / monthlyVisits.length).toLocaleString()
+                ? Math.round(monthlyStats.total / monthlyVisits.length).toLocaleString()
                 : 0}
               원
             </span>
@@ -200,19 +249,33 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 월별 매출 추이 차트 */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-            <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
-            최근 6개월 매출 추이
-          </h3>
+        <div className="lg:col-span-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
+              최근 6개월 매출 추이
+            </h3>
+            <div className="hidden sm:flex space-x-2">
+              <span className="flex items-center text-xs text-gray-400">
+                <span className="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span>
+                매출 하이라이트
+              </span>
+            </div>
+          </div>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={trendData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
               >
+                <defs>
+                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -222,21 +285,26 @@ export default function Dashboard() {
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 12 }}
+                  tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 500 }}
+                  dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 12 }}
+                  tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 500 }}
                   tickFormatter={(val) => `${val / 10000}만`}
                 />
                 <Tooltip
+                  cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }}
                   contentStyle={{
-                    backgroundColor: "#fff",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "12px",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    backdropFilter: "blur(8px)",
+                    border: "1px solid #f1f5f9",
+                    borderRadius: "16px",
+                    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                    padding: "12px"
                   }}
+                  itemStyle={{ fontSize: '13px', fontWeight: 'bold' }}
                   formatter={(value: any) => [
                     `${value.toLocaleString()}원`,
                     "매출액",
@@ -246,72 +314,78 @@ export default function Dashboard() {
                   type="monotone"
                   dataKey="total"
                   stroke="#3b82f6"
-                  strokeWidth={3}
+                  strokeWidth={4}
                   dot={{
-                    r: 4,
+                    r: 5,
                     fill: "#3b82f6",
-                    strokeWidth: 2,
+                    strokeWidth: 3,
                     stroke: "#fff",
                   }}
-                  activeDot={{ r: 6 }}
+                  activeDot={{ r: 8, strokeWidth: 0 }}
+                  animationDuration={1500}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* 필터 및 엑셀 다운로드 사이드 섹션 */}
-        <div className="flex flex-col gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex-1">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-              <Filter className="w-5 h-5 mr-2 text-gray-400" />
-              상세 분석 필터
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                  분석 월 선택
-                </label>
-                <input
-                  type="month"
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700"
-                  value={filterMonth}
-                  onChange={(e) => setFilterMonth(e.target.value)}
-                />
-              </div>
-              <button
-                onClick={handleExportExcel}
-                className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-              >
-                <Download className="w-5 h-5 mr-2" />
-                {format(filterDate, "L월")} 매출 엑셀 다운로드
-              </button>
+        {/* 상세 분석 필터 카드 */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
+          <div className="p-2.5 bg-gray-50 text-gray-400 rounded-xl w-fit mb-4">
+            <Filter className="w-5 h-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-800 mb-1">데이터 필터</h3>
+          <p className="text-xs text-gray-500 mb-6">원하시는 월의 상세 데이터를 확인하세요.</p>
+          
+          <div className="space-y-5">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                분석 기준월
+              </label>
+              <input
+                type="month"
+                className="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-bold text-gray-700 transition-all cursor-pointer"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+              />
             </div>
-            <div className="mt-6 pt-6 border-t border-gray-100 italic text-xs text-gray-400">
-              * 상단 카드의 "이 달의 매출" 스탯은 여기서 선택한 월을 기준으로
-              집계됩니다.
-            </div>
+            <button
+              onClick={handleExportExcel}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all shadow-lg active:scale-95"
+            >
+              <Download className="w-4 h-4" />
+              <span>보고서 추출</span>
+            </button>
+          </div>
+          <div className="mt-auto pt-6 text-[10px] text-gray-400 leading-relaxed font-medium">
+            * 선택된 월({format(filterDate, "yyyy년 L월")})의 모든 방문 기록과 통계 데이터가 하단 차트에 반영됩니다.
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 서비스 비중 차트 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-            <PieIcon className="w-5 h-5 mr-2 text-indigo-500" />
-            {format(filterDate, "L월")} 시술 카테고리별 비중
-          </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* 서비스 비중 차트 (도넛) */}
+        <div className="lg:col-span-2 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center">
+              <PieIcon className="w-5 h-5 mr-2 text-indigo-500" />
+              분석 월 시술 카테고리 비중
+            </h3>
+            <div className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+              Service Share
+            </div>
+          </div>
           <div className="h-64 w-full">
             {serviceStats.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={serviceStats}
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
+                    innerRadius={65}
+                    outerRadius={90}
+                    paddingAngle={8}
                     dataKey="value"
+                    stroke="none"
                   >
                     {serviceStats.map((_, index) => (
                       <Cell
@@ -321,11 +395,28 @@ export default function Dashboard() {
                     ))}
                   </Pie>
                   <Tooltip
+                    contentStyle={{
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      backdropFilter: "blur(8px)",
+                      border: "none",
+                      borderRadius: "12px",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"
+                    }}
                     formatter={(value: any) =>
                       `${Math.round(value).toLocaleString()}원`
                     }
                   />
-                  <Legend />
+                  <Legend 
+                    verticalAlign="middle" 
+                    align="right" 
+                    layout="vertical"
+                    iconType="circle"
+                    formatter={(value, entry: any) => (
+                      <span className="text-gray-600 text-xs font-bold leading-none">
+                        {value} ({Math.round(entry.payload.percent * 100)}%)
+                      </span>
+                    )}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -336,47 +427,96 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 서비스별 횟수 분석 (Bar Chart) */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-            <BarChart3 className="w-5 h-5 mr-2 text-emerald-500" />
-            {format(filterDate, "L월")} 시술 항목별 횟수
-          </h3>
-          <div className="h-64 w-full">
-            {serviceStats.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={serviceStats}
-                  layout="vertical"
-                  margin={{ left: 20 }}
+        {/* 결제 수단 비중 (도넛 차트 추가) */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
+           <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center">
+              <Percent className="w-5 h-5 mr-2 text-emerald-500" />
+              결제 수단 비중
+            </h3>
+          </div>
+          <div className="h-52 w-full mt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={paymentMethodData}
+                  innerRadius={50}
+                  outerRadius={70}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
                 >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    horizontal={true}
-                    vertical={false}
-                    stroke="#f1f5f9"
-                  />
-                  <XAxis type="number" hide />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    axisLine={false}
-                    tickLine={false}
-                    width={80}
-                  />
-                  <Tooltip cursor={{ fill: "#f8fafc" }} />
-                  <Bar
-                    dataKey="count"
-                    fill="#10b981"
-                    radius={[0, 4, 4, 0]}
-                    barSize={24}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm italic">
-                데이터가 없습니다.
+                  <Cell fill="#3b82f6" />
+                  <Cell fill="#10b981" />
+                </Pie>
+                <Tooltip 
+                   formatter={(value: any) => `${value.toLocaleString()}원`}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center text-gray-500 font-bold">
+                <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                카드 결제
               </div>
+              <span className="text-gray-900 font-extrabold">
+                {monthlyStats.total > 0 ? Math.round((monthlyStats.card / monthlyStats.total) * 100) : 0}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center text-gray-500 font-bold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                현금 / 계좌
+              </div>
+              <span className="text-gray-900 font-extrabold">
+                {monthlyStats.total > 0 ? Math.round((monthlyStats.cash / monthlyStats.total) * 100) : 0}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 인기 시술 TOP 3 위젯 */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center">
+              <Trophy className="w-5 h-5 mr-2 text-amber-500" />
+              인기 시술 TOP 3
+            </h3>
+          </div>
+          <div className="space-y-4">
+            {topServices.length > 0 ? (
+              topServices.map((service, idx) => (
+                <div key={service.name} className="relative overflow-hidden p-4 bg-gray-50/50 rounded-xl border border-gray-50 group hover:bg-white hover:shadow-sm transition-all">
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center">
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black mr-3 ${
+                        idx === 0 ? "bg-amber-100 text-amber-600" :
+                        idx === 1 ? "bg-slate-100 text-slate-500" :
+                        "bg-orange-100 text-orange-600"
+                      }`}>
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <div className="text-sm font-extrabold text-gray-800">{service.name}</div>
+                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">수행 횟수: {service.count}회</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                  </div>
+                  <div className="mt-2.5 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full ${
+                        idx === 0 ? "bg-amber-400" : "bg-blue-400"
+                      }`}
+                      style={{ width: `${(service.count / topServices[0].count) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-xs text-gray-400 font-medium">데이터 대기 중...</div>
             )}
           </div>
         </div>
