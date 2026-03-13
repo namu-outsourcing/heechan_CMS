@@ -9,6 +9,8 @@ interface Props {
   icon: React.ReactNode;
   change?: number; // 전일/전월 대비 증감율 (%)
   trend?: "up" | "down" | "neutral";
+  cardLabel?: string;
+  cashLabel?: string;
 }
 
 export default function SalesSummaryCard({
@@ -19,6 +21,8 @@ export default function SalesSummaryCard({
   icon,
   change,
   trend = "neutral",
+  cardLabel = "카드 결제",
+  cashLabel = "현금 / 계좌",
 }: Props) {
   const isUp = trend === "up";
   const isDown = trend === "down";
@@ -64,7 +68,7 @@ export default function SalesSummaryCard({
         <div className="flex justify-between items-center text-xs">
           <span className="text-gray-400 flex items-center font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
-            카드 결제
+            {cardLabel}
           </span>
           <span className="font-bold text-gray-700">
             {formatCurrency(cardAmount)}
@@ -73,7 +77,7 @@ export default function SalesSummaryCard({
         <div className="flex justify-between items-center text-xs">
           <span className="text-gray-400 flex items-center font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
-            현금 / 계좌
+            {cashLabel}
           </span>
           <span className="font-bold text-gray-700">
             {formatCurrency(cashAmount)}

@@ -244,8 +244,10 @@ export default function Dashboard() {
         <SalesSummaryCard
           title="오늘의 총 시술 규모"
           total={todayStats.gross}
-          cardAmount={todayStats.card}
-          cashAmount={todayStats.cash + todayStats.points}
+          cardAmount={todayStats.total}
+          cashAmount={todayStats.points}
+          cardLabel="실 결제 매출"
+          cashLabel="포인트 차감액"
           icon={<Calculator className="w-5 h-5 text-indigo-600" />}
         />
         <SalesSummaryCard
