@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 
-const OWNER_EMAIL = import.meta.env.VITE_OWNER_EMAIL as string;
+const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS as string || "").split(",");
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,14 +18,14 @@ export default function Login() {
 
     console.log("로그인 시도 시작:", {
       inputEmail: email.trim().toLowerCase(),
-      targetEmail: OWNER_EMAIL?.trim().toLowerCase(),
-      isMatch: email.trim().toLowerCase() === OWNER_EMAIL?.trim().toLowerCase(),
+      allowedEmails: ALLOWED_EMAILS,
+      isMatch: ALLOWED_EMAILS.some(e => e.trim().toLowerCase() === email.trim().toLowerCase()),
     });
 
     // 1단계: 이메일 화이트리스트 검사 (앞단 차단)
     if (
-      !OWNER_EMAIL ||
-      email.trim().toLowerCase() !== OWNER_EMAIL.trim().toLowerCase()
+      ALLOWED_EMAILS.length === 0 ||
+      !ALLOWED_EMAILS.some(e => e.trim().toLowerCase() === email.trim().toLowerCase())
     ) {
       console.warn("화이트리스트 검증 실패");
       setError("접근 권한이 없습니다. 관리자 이메일 설정을 확인해주세요.");
@@ -69,10 +69,10 @@ export default function Login() {
       <div className="w-full max-w-sm">
         {/* 로고 영역 */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-lg mb-4">
-            <span className="text-white font-extrabold text-3xl">H</span>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-4 overflow-hidden border border-gray-100">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900">Hair CMS</h1>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">theo barbershop</h1>
           <p className="text-sm text-gray-500 mt-1">관리자 로그인</p>
         </div>
 

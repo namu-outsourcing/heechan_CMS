@@ -23,11 +23,11 @@ export default function Layout() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex justify-center items-center mr-2 shadow-sm">
-                  <span className="text-white font-bold text-lg">H</span>
+                <div className="w-8 h-8 mr-2 shadow-sm overflow-hidden rounded-lg">
+                  <img src="/logo.png" alt="Theo Barbershop" className="w-full h-full object-cover" />
                 </div>
                 <span className="text-xl font-extrabold text-gray-900 tracking-tight">
-                  Hair CMS
+                  theo barbershop
                 </span>
               </div>
               <nav className="hidden sm:ml-10 sm:flex sm:space-x-8 h-full">
