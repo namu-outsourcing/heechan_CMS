@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useCustomerStore } from "../../hooks/useCustomers";
 import { useServiceStore } from "../../hooks/useServices";
-import { X, UserPlus } from "lucide-react";
-import { ServiceCategory } from "../../types";
+import { X, UserPlus, Search, Check } from "lucide-react";
+import { ServiceCategory, Customer } from "../../types";
 
 // VisitWithCustomer 타입 재구성 (순환 import 방지를 위해 로컬 정의)
 interface VisitSaveData {
@@ -51,11 +51,32 @@ export default function VisitModal({
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // --- 고객 검색 기능 (고도화) ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // 현재 선택된 고객 객체
+  const selectedCustomer = useMemo(() => 
+    customers.find(c => c.id === customerId),
+    [customers, customerId]
+  );
+
+  // 검색 결과 필터링
+  const searchedCustomers = useMemo(() => {
+    if (!searchQuery.trim()) return customers.slice(0, 10); // 기본 10명 노출
+    const lowerQuery = searchQuery.toLowerCase().replace(/-/g, "");
+    return customers.filter(c => 
+      c.name.toLowerCase().includes(lowerQuery) || 
+      (c.phone || "").replace(/-/g, "").includes(lowerQuery)
+    ).slice(0, 15); // 최대 15명 노출
+  }, [customers, searchQuery]);
+
   useEffect(() => {
     if (isOpen) {
       if (customers.length === 0) fetchCustomers();
       fetchServices();
       setCustomerId(initialData?.customer_id || "");
+      setSearchQuery(""); // 검색어 초기화
       setVisitedAt(
         initialData?.visited_at || new Date().toISOString().split("T")[0],
       );
@@ -165,21 +186,101 @@ export default function VisitModal({
               )}
             </div>
             {!isNewCustomerMode ? (
-              <select
-                title="고객명 선택"
-                className="w-full p-2.5 border border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                disabled={!!initialData}
-                required={!isNewCustomerMode}
-              >
-                <option value="">고객을 선택하세요</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.phone})
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                {selectedCustomer && !isDropdownOpen ? (
+                  /* 선택된 상태 UI */
+                  <div className="flex items-center justify-between p-2.5 bg-blue-50 border border-blue-200 rounded-lg group animate-in fade-in zoom-in duration-200">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs mr-3">
+                        {selectedCustomer.name[0]}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-blue-900">{selectedCustomer.name}</div>
+                        <div className="text-[10px] text-blue-500 font-medium">{selectedCustomer.phone || "연락처 없음"}</div>
+                      </div>
+                    </div>
+                    {!initialData && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerId("");
+                          setSearchQuery("");
+                          setIsDropdownOpen(true);
+                        }}
+                        className="text-xs text-blue-400 hover:text-blue-600 font-bold"
+                      >
+                        변경
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  /* 검색 입력 상태 */
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="이름 또는 전화번호로 검색"
+                      className="w-full pl-9 pr-4 py-2.5 border border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setIsDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsDropdownOpen(true)}
+                      disabled={!!initialData}
+                    />
+                    
+                    {/* 드롭다운 결과 */}
+                    {isDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-[60] py-2 max-h-60 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
+                        {searchedCustomers.length > 0 ? (
+                          searchedCustomers.map((c: Customer) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => {
+                                setCustomerId(c.id);
+                                setIsDropdownOpen(false);
+                                setSearchQuery("");
+                              }}
+                              className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="flex items-center text-left">
+                                <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-[10px] mr-3 uppercase">
+                                  {c.name[0]}
+                                </div>
+                                <div>
+                                  <div className="text-sm font-bold text-gray-800">{c.name}</div>
+                                  <div className="text-[10px] text-gray-400 font-medium">{c.phone || "-"}</div>
+                                </div>
+                              </div>
+                              {customerId === c.id && <Check className="w-4 h-4 text-blue-500" />}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-4 py-8 text-center">
+                            <p className="text-xs text-gray-400 italic">검색 결과가 없습니다.</p>
+                            <button 
+                              type="button"
+                              onClick={() => setIsNewCustomerMode(true)}
+                              className="mt-2 text-xs font-bold text-blue-600 hover:underline"
+                            >
+                              신규 고객으로 등록하기
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* 외부 클릭 닫기용 투명 배경 */}
+                    {isDropdownOpen && (
+                      <div 
+                        className="fixed inset-0 z-[-1]" 
+                        onClick={() => setIsDropdownOpen(false)}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="space-y-2 pt-2 border-t border-gray-200 mt-2">
                 <div className="grid grid-cols-2 gap-2">
