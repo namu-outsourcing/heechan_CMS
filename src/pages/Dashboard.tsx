@@ -12,6 +12,7 @@ import {
   Users,
   Percent,
   ChevronRight,
+  Minus,
 } from "lucide-react";
 import {
   startOfMonth,
@@ -97,6 +98,7 @@ export default function Dashboard() {
       return {
         name: format(month, "MMM", { locale: ko }),
         total: mVisits.reduce((sum, v) => sum + v.payment_amount, 0),
+        points: mVisits.reduce((sum, v) => sum + (v.points_used || 0), 0),
         count: mVisits.length,
       };
     });
@@ -134,12 +136,16 @@ export default function Dashboard() {
   const calcStats = (targetVisits: typeof visits) => {
     return targetVisits.reduce(
       (acc, v) => {
-        acc.total += v.payment_amount;
-        if (v.payment_method === "card") acc.card += v.payment_amount;
-        else acc.cash += v.payment_amount;
+        const amount = v.payment_amount || 0;
+        const used = v.points_used || 0;
+        acc.total += amount;
+        acc.points += used;
+        acc.gross += amount + used;
+        if (v.payment_method === "card") acc.card += amount;
+        else acc.cash += amount;
         return acc;
       },
-      { total: 0, card: 0, cash: 0 },
+      { total: 0, card: 0, cash: 0, points: 0, gross: 0 },
     );
   };
 
@@ -244,6 +250,20 @@ export default function Dashboard() {
           trend={todayGrowth > 0 ? "up" : todayGrowth < 0 ? "down" : "neutral"}
         />
         <SalesSummaryCard
+          title="오늘의 포인트 사용"
+          total={todayStats.points}
+          cardAmount={0}
+          cashAmount={0}
+          icon={<Minus className="w-6 h-6 text-rose-500" />}
+        />
+        <SalesSummaryCard
+          title="오늘의 총 매출 (포인트 포함)"
+          total={todayStats.gross}
+          cardAmount={todayStats.card}
+          cashAmount={todayStats.cash + todayStats.points}
+          icon={<Users className="w-6 h-6 text-indigo-500" />}
+        />
+        <SalesSummaryCard
           title={`${format(filterDate, "L월")} 매출`}
           total={monthlyStats.total}
           cardAmount={monthlyStats.card}
@@ -270,13 +290,21 @@ export default function Dashboard() {
             {monthlyVisits.length}
             <span className="text-base font-medium text-gray-400 ml-1">건</span>
           </p>
-          <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium">평균 객단가</span>
-            <span className="text-sm font-bold text-gray-700">
-              {monthlyVisits.length > 0
-                ? formatCurrency(Math.round(monthlyStats.total / monthlyVisits.length))
-                : "0원"}
-            </span>
+          <div className="mt-auto pt-4 border-t border-gray-50">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-50">
+              <span className="text-xs text-gray-400 font-medium tracking-tight">포인트 사용액</span>
+              <span className="text-sm font-bold text-rose-600">
+                {formatCurrency(monthlyStats.points)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between pt-3">
+              <span className="text-xs text-gray-400 font-medium">평균 객단가 (실매출 기준)</span>
+              <span className="text-sm font-bold text-gray-700">
+                {monthlyVisits.length > 0
+                  ? formatCurrency(Math.round(monthlyStats.total / monthlyVisits.length))
+                  : "0원"}
+              </span>
+            </div>
           </div>
         </div>
       </div>

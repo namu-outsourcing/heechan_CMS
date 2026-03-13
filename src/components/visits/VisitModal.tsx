@@ -402,6 +402,12 @@ export default function VisitModal({
                 onChange={(e) => setPaymentAmount(e.target.value)}
                 required
               />
+              {pointsUsed && parseInt(pointsUsed) > 0 && (
+                <p className="mt-1.5 text-[10px] text-gray-400 font-medium flex items-center">
+                  <span className="w-1 h-1 bg-gray-300 rounded-full mr-1"></span>
+                  포인트 사용이 적용된 <span className="text-gray-600 font-bold mx-0.5">최종 결제 금액</span>을 입력해주세요.
+                </p>
+              )}
             </div>
           </div>
 
