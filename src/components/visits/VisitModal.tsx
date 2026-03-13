@@ -48,7 +48,7 @@ export default function VisitModal({
   const [memo, setMemo] = useState(initialData?.memo || "");
   const [pointsEarned, setPointsEarned] = useState(initialData?.points_earned?.toString() || "0");
   const [pointsUsed, setPointsUsed] = useState(initialData?.points_used?.toString() || "0");
-  const [serviceTotal, setServiceTotal] = useState("");
+  const [serviceTotal, setServiceTotal] = useState(initialData ? (initialData.payment_amount + (initialData.points_used || 0)).toString() : "0");
 
   const [isNewCustomerMode, setIsNewCustomerMode] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
@@ -100,7 +100,7 @@ export default function VisitModal({
       setMemo(initialData?.memo || "");
       setPointsEarned(initialData?.points_earned?.toString() || "0");
       setPointsUsed(initialData?.points_used?.toString() || "0");
-      setServiceTotal(initialData?.payment_amount ? (initialData.payment_amount + (initialData.points_used || 0)).toString() : "");
+      setServiceTotal(initialData?.payment_amount ? (initialData.payment_amount + (initialData.points_used || 0)).toString() : "0");
       setIsNewCustomerMode(false);
     }
   }, [isOpen, initialData]);
@@ -341,51 +341,51 @@ export default function VisitModal({
           <div className="p-5 bg-blue-50/30 rounded-3xl border border-blue-100/50 space-y-4 shadow-sm">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-400 mb-2 tracking-widest uppercase flex items-center">
+                <label className="block text-[10px] font-black text-gray-400 mb-1.5 tracking-widest uppercase flex items-center">
                   <Calculator className="w-3 h-3 mr-1" />
                   총 시술 정가
                 </label>
                 <input
                   type="number"
-                  placeholder="24,000"
-                  className="w-full px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-gray-600 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="0"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 outline-none"
                   value={serviceTotal}
                   onChange={(e) => setServiceTotal(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-rose-500 mb-2 tracking-widest uppercase flex items-center">
+                <label className="block text-[10px] font-black text-rose-500 mb-1.5 tracking-widest uppercase flex items-center">
                   <Check className="w-3 h-3 mr-1" />
                   포인트 사용 (보유: {(selectedCustomer?.total_points || 0).toLocaleString()}P)
                 </label>
                 <input
                   type="number"
-                  className="w-full px-4 py-3 bg-white border border-rose-50 rounded-2xl text-sm font-bold text-rose-600 shadow-sm transition-all focus:ring-2 focus:ring-rose-500 outline-none"
+                  className="w-full px-4 py-2.5 bg-white border border-rose-50 rounded-xl text-sm font-bold text-rose-600 shadow-sm transition-all focus:ring-2 focus:ring-rose-500 outline-none"
                   value={pointsUsed}
                   onChange={(e) => setPointsUsed(e.target.value)}
                 />
                 {parseInt(pointsUsed) > (selectedCustomer?.total_points || 0) && (
-                  <p className="text-[9px] text-rose-500 mt-1.5 font-black animate-pulse">잔액이 부족합니다.</p>
+                  <p className="text-[9px] text-rose-500 mt-1 font-black animate-pulse">잔액이 부족합니다.</p>
                 )}
               </div>
             </div>
 
             <div className="pt-2 border-t border-blue-100/30">
-              <label className="block text-[10px] font-black text-blue-600 mb-2 tracking-widest uppercase">최종 실 결제 금액 *</label>
+              <label className="block text-[10px] font-black text-blue-600 mb-1.5 tracking-widest uppercase">최종 실 결제 금액 *</label>
               <div className="relative">
                 <input
                   type="number"
-                  placeholder="21,000"
-                  className="w-full px-5 py-4 bg-white border-2 border-blue-500/20 rounded-2xl text-xl font-black text-blue-700 shadow-lg shadow-blue-50 outline-none focus:ring-2 focus:ring-blue-500 transition-all pl-12"
+                  placeholder="0"
+                  className="w-full px-5 py-3 bg-white border-2 border-blue-500/20 rounded-2xl text-lg font-black text-blue-700 shadow-md shadow-blue-50 outline-none focus:ring-2 focus:ring-blue-500 transition-all pl-12"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
                   required
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300 font-black text-lg">₩</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300 font-black text-base">₩</span>
               </div>
               
-              {serviceTotal && (
-                <p className="mt-3 text-[11px] font-bold text-blue-900/40 text-center bg-white/50 py-1.5 rounded-full border border-blue-100/20">
+              {parseInt(serviceTotal) > 0 && (
+                <p className="mt-2.5 text-[10px] font-bold text-blue-900/40 text-center bg-white/50 py-1 rounded-full border border-blue-100/10">
                   {parseInt(serviceTotal).toLocaleString()}원(정가) - {parseInt(pointsUsed || "0").toLocaleString()}P(사용) = <span className="text-blue-600">{parseInt(paymentAmount).toLocaleString()}원</span>
                 </p>
               )}
@@ -395,20 +395,20 @@ export default function VisitModal({
           {/* 방문 결과 섹션 (적립, 수단, 날짜) */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-4">
-              <div className="p-4 bg-indigo-50/50 rounded-3xl border border-indigo-100/50">
-                <label className="block text-[10px] font-black text-indigo-700 mb-2 tracking-widest uppercase">✨ 이번 방문 적립 포인트</label>
+              <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                <label className="block text-[10px] font-black text-indigo-700 mb-1.5 tracking-widest uppercase">✨ 이번 적립 포인트</label>
                 <input
                   type="number"
-                  className="w-full px-3 py-2.5 bg-white border border-indigo-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+                  className="w-full px-3 py-2 bg-white border border-indigo-100 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
                   value={pointsEarned}
                   onChange={(e) => setPointsEarned(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 tracking-tight">방문 날짜 *</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5 tracking-tight uppercase">방문 날짜 *</label>
                 <input
                   type="date"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all shadow-sm"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all shadow-sm"
                   value={visitedAt}
                   onChange={(e) => setVisitedAt(e.target.value)}
                   required
@@ -418,19 +418,19 @@ export default function VisitModal({
             
             <div className="space-y-4">
               <div className="h-full flex flex-col">
-                <label className="block text-sm font-bold text-gray-700 mb-2 tracking-tight">결제 수단 *</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5 tracking-tight uppercase">결제 수단 *</label>
                 <div className="grid grid-rows-2 gap-2 h-full">
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("card")}
-                    className={`py-3 text-xs font-bold rounded-2xl transition-all flex items-center justify-center ${paymentMethod === "card" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" : "bg-white text-gray-400 border border-gray-200 hover:bg-gray-50"}`}
+                    className={`py-2 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center ${paymentMethod === "card" ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "bg-white text-gray-400 border border-gray-100 hover:bg-gray-50"}`}
                   >
-                    💳 카드 결제
+                    💳 카드
                   </button>
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("cash")}
-                    className={`py-3 text-xs font-bold rounded-2xl transition-all flex items-center justify-center ${paymentMethod === "cash" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-100" : "bg-white text-gray-400 border border-gray-200 hover:bg-gray-50"}`}
+                    className={`py-2 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center ${paymentMethod === "cash" ? "bg-emerald-600 text-white shadow-md shadow-emerald-100" : "bg-white text-gray-400 border border-gray-200 hover:bg-gray-50"}`}
                   >
                     💵 현금 / 계좌
                   </button>
@@ -452,12 +452,12 @@ export default function VisitModal({
         </form>
 
         {/* 하단 버튼 */}
-        <div className="px-6 py-5 border-t border-gray-100 flex space-x-3 bg-white shrink-0">
+        <div className="px-6 py-4 border-t border-gray-100 flex space-x-3 bg-white shrink-0">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="flex-1 py-3.5 border border-gray-200 text-gray-500 font-bold rounded-2xl hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50"
+            className="flex-1 py-3 border border-gray-200 text-gray-400 font-bold rounded-xl hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 text-sm"
           >
             취소
           </button>
@@ -465,9 +465,9 @@ export default function VisitModal({
             type="submit"
             disabled={isSubmitting || (parseInt(pointsUsed) > (selectedCustomer?.total_points || 0))}
             onClick={handleSubmit}
-            className="flex-[2] py-3.5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 disabled:opacity-50 disabled:shadow-none"
+            className="flex-[2] py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95 disabled:opacity-50 disabled:shadow-none text-sm"
           >
-            {isSubmitting ? "기록 중..." : (initialData ? "기록 수정 완료" : "방문 기록 저장")}
+            {isSubmitting ? "저장 중..." : (initialData ? "수정 완료" : "방문 기록 저장")}
           </button>
         </div>
       </div>
