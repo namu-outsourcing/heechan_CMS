@@ -13,7 +13,6 @@ import {
   Percent,
   ChevronRight,
   Minus,
-  Calculator,
 } from "lucide-react";
 import {
   startOfMonth,
@@ -242,29 +241,20 @@ export default function Dashboard() {
       {/* 요약 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <SalesSummaryCard
-          title="오늘의 총 시술 규모"
-          total={todayStats.gross}
-          cardAmount={todayStats.total}
-          cashAmount={todayStats.points}
-          cardLabel="실 결제 매출"
-          cashLabel="포인트 차감액"
-          icon={<Calculator className="w-5 h-5 text-indigo-600" />}
-        />
-        <SalesSummaryCard
-          title="오늘의 포인트 차감"
-          total={todayStats.points}
-          cardAmount={0}
-          cashAmount={0}
-          icon={<Minus className="w-5 h-5 text-rose-500" />}
-        />
-        <SalesSummaryCard
-          title="오늘의 실 매출액"
+          title="오늘 매출액"
           total={todayStats.total}
           cardAmount={todayStats.card}
           cashAmount={todayStats.cash}
           icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
           change={todayGrowth}
           trend={todayGrowth > 0 ? "up" : todayGrowth < 0 ? "down" : "neutral"}
+        />
+        <SalesSummaryCard
+          title="오늘 사용된 포인트"
+          total={todayStats.points}
+          cardAmount={0}
+          cashAmount={0}
+          icon={<Minus className="w-5 h-5 text-rose-500" />}
         />
         <SalesSummaryCard
           title={`${format(filterDate, "L월")} 매출`}
