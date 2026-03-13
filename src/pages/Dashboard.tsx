@@ -119,9 +119,15 @@ export default function Dashboard() {
       }
     });
 
-    return Object.entries(stats)
+    const list = Object.entries(stats)
       .map(([name, data]) => ({ name, value: data.value, count: data.count }))
       .sort((a, b) => b.value - a.value);
+
+    const totalValue = list.reduce((sum, item) => sum + item.value, 0);
+    return list.map(item => ({
+      ...item,
+      percent: totalValue > 0 ? item.value / totalValue : 0
+    }));
   }, [monthlyVisits]);
 
   const calcStats = (targetVisits: typeof visits) => {
