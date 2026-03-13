@@ -331,131 +331,111 @@ export default function VisitModal({
               })}
             </div>
             {selectedServices.length > 0 && (
-              <div className="flex items-center px-4 py-3 bg-blue-50/80 rounded-2xl border border-blue-100/50 shadow-sm animate-in fade-in zoom-in-95">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-tighter">선택 항목 합계</span>
-                  <span className="text-base font-black text-blue-700 leading-none mt-1">
-                    {formatCurrency(selectedServices.reduce((acc, s) => acc + s.price, 0))}
-                  </span>
-                </div>
-                <div className="ml-auto flex items-center space-x-2">
-                  <div className="text-[10px] text-blue-400 font-bold italic mr-1">금액 자동 반영됨</div>
-                  <button
-                    type="button"
-                    onClick={() => setServiceTotal(selectedServices.reduce((acc, s) => acc + s.price, 0).toString())}
-                    className="bg-blue-600 text-white p-2 rounded-xl active:scale-95 transition-transform shadow-md"
-                    title="금액 다시 불러오기"
-                  >
-                    <Calculator className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+              <p className="text-[11px] font-bold text-blue-600 animate-in fade-in slide-in-from-left-1">
+                항목 합계: {formatCurrency(selectedServices.reduce((acc, s) => acc + s.price, 0))} (자동 반영됨)
+              </p>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-6 items-end">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 tracking-tight">방문 날짜 *</label>
-              <input
-                type="date"
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all shadow-sm"
-                value={visitedAt}
-                onChange={(e) => setVisitedAt(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 tracking-tight">결제 수단 *</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("card")}
-                  className={`py-3 text-xs font-bold rounded-2xl transition-all ${paymentMethod === "card" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" : "bg-white text-gray-400 border border-gray-200 hover:bg-gray-50"}`}
-                >
-                  카드
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("cash")}
-                  className={`py-3 text-xs font-bold rounded-2xl transition-all ${paymentMethod === "cash" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-100" : "bg-white text-gray-400 border border-gray-200 hover:bg-gray-50"}`}
-                >
-                  현금
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 차감 흐름 UI */}
-          <div className="p-5 bg-gray-50 rounded-3xl border border-gray-200 space-y-4 shadow-inner">
+          {/* 결제 정보 섹션 (차감 로직 중심) */}
+          <div className="p-5 bg-blue-50/30 rounded-3xl border border-blue-100/50 space-y-4 shadow-sm">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-400 mb-2 tracking-widest uppercase text-center flex items-center justify-center">
+                <label className="block text-[10px] font-black text-gray-400 mb-2 tracking-widest uppercase flex items-center">
                   <Calculator className="w-3 h-3 mr-1" />
                   총 시술 정가
                 </label>
                 <input
                   type="number"
                   placeholder="24,000"
-                  className="w-full px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-gray-600 text-center shadow-sm"
+                  className="w-full px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-gray-600 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 outline-none"
                   value={serviceTotal}
                   onChange={(e) => setServiceTotal(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-blue-500 mb-2 tracking-widest uppercase text-center">실 매출 결제액 *</label>
+                <label className="block text-[10px] font-black text-rose-500 mb-2 tracking-widest uppercase flex items-center">
+                  <Check className="w-3 h-3 mr-1" />
+                  포인트 사용 (보유: {(selectedCustomer?.total_points || 0).toLocaleString()}P)
+                </label>
                 <input
                   type="number"
-                  placeholder="19,000"
-                  className="w-full px-4 py-3 bg-white border border-blue-50 rounded-2xl text-sm font-black text-blue-700 text-center shadow-sm ring-2 ring-blue-500/10"
+                  className="w-full px-4 py-3 bg-white border border-rose-50 rounded-2xl text-sm font-bold text-rose-600 shadow-sm transition-all focus:ring-2 focus:ring-rose-500 outline-none"
+                  value={pointsUsed}
+                  onChange={(e) => setPointsUsed(e.target.value)}
+                />
+                {parseInt(pointsUsed) > (selectedCustomer?.total_points || 0) && (
+                  <p className="text-[9px] text-rose-500 mt-1.5 font-black animate-pulse">잔액이 부족합니다.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-blue-100/30">
+              <label className="block text-[10px] font-black text-blue-600 mb-2 tracking-widest uppercase">최종 실 결제 금액 *</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  placeholder="21,000"
+                  className="w-full px-5 py-4 bg-white border-2 border-blue-500/20 rounded-2xl text-xl font-black text-blue-700 shadow-lg shadow-blue-50 outline-none focus:ring-2 focus:ring-blue-500 transition-all pl-12"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
                   required
                 />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300 font-black text-lg">₩</span>
               </div>
+              
+              {serviceTotal && (
+                <p className="mt-3 text-[11px] font-bold text-blue-900/40 text-center bg-white/50 py-1.5 rounded-full border border-blue-100/20">
+                  {parseInt(serviceTotal).toLocaleString()}원(정가) - {parseInt(pointsUsed || "0").toLocaleString()}P(사용) = <span className="text-blue-600">{parseInt(paymentAmount).toLocaleString()}원</span>
+                </p>
+              )}
             </div>
-
-            {serviceTotal && (
-              <div className="flex items-center justify-between text-[11px] font-bold px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm animate-in zoom-in-95 duration-300">
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-400">{parseInt(serviceTotal).toLocaleString()}원(정가)</span>
-                  {parseInt(pointsUsed) > 0 && (
-                    <>
-                      <span className="text-gray-300">/</span>
-                      <span className="text-rose-500">-{parseInt(pointsUsed).toLocaleString()}P(차감)</span>
-                    </>
-                  )}
-                </div>
-                <div className="flex items-center space-x-1.5 text-blue-600 text-xs font-black">
-                  <span className="text-gray-300">=</span>
-                  <span>{parseInt(paymentAmount) === (parseInt(serviceTotal) - (parseInt(pointsUsed) || 0)) ? "최종" : "조정됨"} {parseInt(paymentAmount).toLocaleString()}원 결제</span>
-                </div>
-              </div>
-            )}
           </div>
 
+          {/* 방문 결과 섹션 (적립, 수단, 날짜) */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-blue-50/50 rounded-3xl border border-blue-100/50">
-              <label className="block text-[10px] font-black text-blue-700 mb-2 tracking-widest uppercase">포인트 적립</label>
-              <input
-                type="number"
-                className="w-full px-3 py-2.5 bg-white border border-blue-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
-                value={pointsEarned}
-                onChange={(e) => setPointsEarned(e.target.value)}
-              />
+            <div className="space-y-4">
+              <div className="p-4 bg-indigo-50/50 rounded-3xl border border-indigo-100/50">
+                <label className="block text-[10px] font-black text-indigo-700 mb-2 tracking-widest uppercase">✨ 이번 방문 적립 포인트</label>
+                <input
+                  type="number"
+                  className="w-full px-3 py-2.5 bg-white border border-indigo-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+                  value={pointsEarned}
+                  onChange={(e) => setPointsEarned(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 tracking-tight">방문 날짜 *</label>
+                <input
+                  type="date"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all shadow-sm"
+                  value={visitedAt}
+                  onChange={(e) => setVisitedAt(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-            <div className="p-4 bg-rose-50/50 rounded-3xl border border-rose-100/50">
-              <label className="block text-[10px] font-black text-rose-700 mb-2 tracking-widest uppercase leading-tight">
-                포인트 사용 <span className="opacity-50 text-[9px] font-medium leading-none block mt-0.5">({(selectedCustomer?.total_points || 0).toLocaleString()}P 보유)</span>
-              </label>
-              <input
-                type="number"
-                className="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-rose-500 outline-none transition-all shadow-sm"
-                value={pointsUsed}
-                onChange={(e) => setPointsUsed(e.target.value)}
-              />
-              {parseInt(pointsUsed) > (selectedCustomer?.total_points || 0) && (
-                <p className="text-[9px] text-rose-500 mt-1.5 font-black animate-pulse">포인트 잔액이 부족합니다.</p>
-              )}
+            
+            <div className="space-y-4">
+              <div className="h-full flex flex-col">
+                <label className="block text-sm font-bold text-gray-700 mb-2 tracking-tight">결제 수단 *</label>
+                <div className="grid grid-rows-2 gap-2 h-full">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("card")}
+                    className={`py-3 text-xs font-bold rounded-2xl transition-all flex items-center justify-center ${paymentMethod === "card" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" : "bg-white text-gray-400 border border-gray-200 hover:bg-gray-50"}`}
+                  >
+                    💳 카드 결제
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("cash")}
+                    className={`py-3 text-xs font-bold rounded-2xl transition-all flex items-center justify-center ${paymentMethod === "cash" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-100" : "bg-white text-gray-400 border border-gray-200 hover:bg-gray-50"}`}
+                  >
+                    💵 현금 / 계좌
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
