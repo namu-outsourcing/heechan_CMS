@@ -184,6 +184,10 @@ export default function Dashboard() {
     { name: "현금/계좌", value: monthlyStats.cash },
   ];
 
+  // --- 차트 인터랙션 상태 (고도화) ---
+  const [activeServiceIdx, setActiveServiceIdx] = useState(-1);
+  const [activePaymentIdx, setActivePaymentIdx] = useState(-1);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -191,6 +195,26 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  // 그라데이션 정의 컴포넌트
+  const ChartGradients = () => (
+    <defs>
+      {COLORS.map((color, i) => (
+        <linearGradient key={`grad-${i}`} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={1} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.7} />
+        </linearGradient>
+      ))}
+      <linearGradient id="grad-card" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
+        <stop offset="100%" stopColor="#4f46e5" stopOpacity={0.8} />
+      </linearGradient>
+      <linearGradient id="grad-cash" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+        <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
+      </linearGradient>
+    </defs>
+  );
 
   return (
     <div className="space-y-8 pb-12">
@@ -377,22 +401,40 @@ export default function Dashboard() {
               Service Share
             </div>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-64 w-full relative">
+            {/* 도넛 중앙 텍스트 */}
+            <div className="absolute top-1/2 left-[32%] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Total</div>
+              <div className="text-xl font-black text-gray-800 leading-none">
+                {Math.round(serviceStats.reduce((sum, s) => sum + s.value, 0) / 10000)}<span className="text-xs font-bold text-gray-400 ml-0.5">만</span>
+              </div>
+            </div>
+
             {serviceStats.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
+                  <ChartGradients />
                   <Pie
                     data={serviceStats}
-                    innerRadius={65}
-                    outerRadius={90}
-                    paddingAngle={8}
+                    innerRadius={70}
+                    outerRadius={95}
+                    paddingAngle={6}
                     dataKey="value"
                     stroke="none"
+                    cornerRadius={8}
+                    onMouseEnter={(_, index) => setActiveServiceIdx(index)}
+                    onMouseLeave={() => setActiveServiceIdx(-1)}
                   >
                     {serviceStats.map((_, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
+                        fill={`url(#grad-${index % COLORS.length})`}
+                        style={{
+                           filter: activeServiceIdx === index ? 'drop-shadow(0px 8px 12px rgba(0,0,0,0.15))' : 'none',
+                           transition: 'all 0.3s ease',
+                           transform: activeServiceIdx === index ? 'scale(1.05)' : 'scale(1)',
+                           transformOrigin: 'center'
+                        }}
                       />
                     ))}
                   </Pie>
@@ -417,7 +459,7 @@ export default function Dashboard() {
                       const percent = entry.payload?.percent;
                       const displayPercent = isNaN(percent) ? 0 : Math.round(percent * 100);
                       return (
-                        <span className="text-gray-600 text-xs font-bold leading-none">
+                        <span className={`text-xs font-bold transition-colors ${activeServiceIdx === serviceStats.findIndex(s => s.name === value) ? 'text-indigo-600' : 'text-gray-500'}`}>
                           {value} ({displayPercent}%)
                         </span>
                       );
@@ -441,19 +483,42 @@ export default function Dashboard() {
               결제 수단 비중
             </h3>
           </div>
-          <div className="h-52 w-full mt-2">
+          <div className="h-52 w-full mt-2 relative">
+             {/* 도넛 중앙 아이콘 */}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] pointer-events-none">
+                <Percent className="w-6 h-6 text-gray-100" />
+             </div>
+
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
+                <ChartGradients />
                 <Pie
                   data={paymentMethodData}
-                  innerRadius={50}
-                  outerRadius={70}
-                  paddingAngle={5}
+                  innerRadius={55}
+                  outerRadius={75}
+                  paddingAngle={8}
                   dataKey="value"
                   stroke="none"
+                  cornerRadius={6}
+                  onMouseEnter={(_, index) => setActivePaymentIdx(index)}
+                  onMouseLeave={() => setActivePaymentIdx(-1)}
                 >
-                  <Cell fill="#3b82f6" />
-                  <Cell fill="#10b981" />
+                  <Cell 
+                    fill="url(#grad-card)" 
+                    style={{
+                      transition: 'all 0.3s ease',
+                      transform: activePaymentIdx === 0 ? 'scale(1.08)' : 'scale(1)',
+                      transformOrigin: 'center'
+                    }}
+                  />
+                  <Cell 
+                    fill="url(#grad-cash)" 
+                    style={{
+                      transition: 'all 0.3s ease',
+                      transform: activePaymentIdx === 1 ? 'scale(1.08)' : 'scale(1)',
+                      transformOrigin: 'center'
+                    }}
+                  />
                 </Pie>
                 <Tooltip 
                    formatter={(value: any) => `${value.toLocaleString()}원`}
@@ -462,21 +527,21 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
           <div className="mt-4 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center text-gray-500 font-bold">
-                <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+            <div className="flex items-center justify-between text-xs px-1">
+              <div className={`flex items-center font-bold transition-colors ${activePaymentIdx === 0 ? 'text-blue-600' : 'text-gray-400'}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
                 카드 결제
               </div>
-              <span className="text-gray-900 font-extrabold">
+              <span className={`font-extrabold transition-colors ${activePaymentIdx === 0 ? 'text-blue-600' : 'text-gray-900'}`}>
                 {monthlyStats.total > 0 ? Math.round((monthlyStats.card / monthlyStats.total) * 100) : 0}%
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center text-gray-500 font-bold">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+            <div className="flex items-center justify-between text-xs px-1">
+              <div className={`flex items-center font-bold transition-colors ${activePaymentIdx === 1 ? 'text-emerald-600' : 'text-gray-400'}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
                 현금 / 계좌
               </div>
-              <span className="text-gray-900 font-extrabold">
+              <span className={`font-extrabold transition-colors ${activePaymentIdx === 1 ? 'text-emerald-600' : 'text-gray-900'}`}>
                 {monthlyStats.total > 0 ? Math.round((monthlyStats.cash / monthlyStats.total) * 100) : 0}%
               </span>
             </div>
