@@ -14,15 +14,15 @@ export interface Visit {
   payment_method: "card" | "cash";
   services?: string[]; // 시술 칩 선택 목록 (신규 추가)
   memo?: string;
-  points_earned: number;
-  points_used: number;
+  points_earned?: number;
+  points_used?: number;
   created_at?: string;
 }
 
 export interface CustomerWithLastVisit extends Customer {
   visits?: { visited_at: string; points_earned: number; points_used: number }[];
   last_visited_at?: string;
-  total_points: number;
+  total_points?: number;
 }
 
 export interface ServiceCategory {

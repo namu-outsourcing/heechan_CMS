@@ -13,8 +13,8 @@ interface VisitSaveData {
   payment_method: "card" | "cash";
   services?: string[];
   memo?: string;
-  points_earned: number;
-  points_used: number;
+  points_earned?: number;
+  points_used?: number;
 }
 
 interface Props {

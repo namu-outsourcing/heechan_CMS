@@ -94,14 +94,14 @@ export default function CustomerHistoryModal({
 
                     {/* 포인트 내역 */}
                     <div className="flex gap-2 mb-3">
-                      {v.points_earned > 0 && (
+                      {(v.points_earned ?? 0) > 0 && (
                         <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-600 rounded border border-blue-100">
-                          💰 +{v.points_earned.toLocaleString()}P 적립
+                          💰 +{(v.points_earned ?? 0).toLocaleString()}P 적립
                         </span>
                       )}
-                      {v.points_used > 0 && (
+                      {(v.points_used ?? 0) > 0 && (
                         <span className="px-2 py-0.5 text-[10px] font-bold bg-red-50 text-red-600 rounded border border-red-100">
-                          🎫 -{v.points_used.toLocaleString()}P 사용
+                          🎫 -{(v.points_used ?? 0).toLocaleString()}P 사용
                         </span>
                       )}
                     </div>
