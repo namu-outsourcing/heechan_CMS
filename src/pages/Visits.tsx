@@ -46,25 +46,25 @@ export default function Visits() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 transition-colors">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">방문 기록</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 transition-colors">방문 기록</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-500 mt-1 transition-colors">
             고객의 방문, 결제 및 구체적인 시술 내역을 기록합니다.
           </p>
         </div>
         <div className="flex space-x-2">
           <button
             onClick={() => setIsNaverModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
+            className="inline-flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm active:scale-95"
           >
-            <FileSpreadsheet className="w-5 h-5 mr-1 text-green-600" />
+            <FileSpreadsheet className="w-5 h-5 mr-1 text-green-600 dark:text-green-500" />
             네이버 불러오기
           </button>
           <button
             onClick={handleOpenAddModal}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm active:scale-95"
           >
             <Plus className="w-5 h-5 mr-1" />
             방문 기록 추가
@@ -78,10 +78,10 @@ export default function Visits() {
         </div>
       )}
 
-      <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 shadow-sm border border-gray-200 dark:border-slate-800 rounded-lg overflow-hidden transition-colors">
         {isLoading ? (
           <div className="flex justify-center items-center h-48">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
           </div>
         ) : (
           <VisitTable

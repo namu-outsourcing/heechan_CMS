@@ -66,17 +66,17 @@ export default function Customers() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 transition-colors">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">고객 관리</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 transition-colors">고객 관리</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-500 mt-1 transition-colors">
             고객 명단을 클릭하여 상세 방문 내역을 확인하거나 정보를 수정하세요.
           </p>
         </div>
         <button
           onClick={handleOpenAddModal}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
+          className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm active:scale-95"
         >
           <Plus className="w-5 h-5 mr-1" />
           고객 등록
@@ -90,21 +90,21 @@ export default function Customers() {
       )}
 
       <div className="space-y-4">
-        <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm px-3 py-2 w-full max-w-sm">
-          <Search className="w-5 h-5 text-gray-400 mr-2" />
+        <div className="flex items-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg shadow-sm px-3 py-2 w-full max-w-sm transition-colors">
+          <Search className="w-5 h-5 text-gray-400 dark:text-slate-600 mr-2" />
           <input
             type="text"
             placeholder="이름 또는 연락처 검색..."
-            className="w-full bg-transparent border-none outline-none text-gray-700 focus:ring-0 placeholder-gray-400"
+            className="w-full bg-transparent border-none outline-none text-gray-700 dark:text-slate-200 focus:ring-0 placeholder-gray-400 dark:placeholder:text-slate-600"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 shadow-sm border border-gray-200 dark:border-slate-800 rounded-lg overflow-hidden transition-colors">
           {isLoading ? (
             <div className="flex justify-center items-center h-48">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
             </div>
           ) : (
             <CustomerTable

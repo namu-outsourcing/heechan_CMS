@@ -49,15 +49,15 @@ export default function CustomerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-        <div className="flex justify-between items-center p-4 border-b border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-slate-800 transition-all">
+        <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-slate-800">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-slate-100">
             {initialData ? "고객 정보 수정" : "새 고객 등록"}
           </h3>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+            className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -65,12 +65,12 @@ export default function CustomerModal({
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
               성함 *
             </label>
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+              className="w-full p-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-600"
               placeholder="예: 홍길동"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -79,12 +79,12 @@ export default function CustomerModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
               연락처 (선택)
             </label>
             <input
               type="tel"
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+              className="w-full p-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-600"
               placeholder="예: 010-1234-5678"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -92,11 +92,11 @@ export default function CustomerModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
               고객 메모 (선택)
             </label>
             <textarea
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+              className="w-full p-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-600"
               placeholder="알레르기, 선호 스타일 등 고객 특이사항 메모"
               rows={3}
               value={memo}
@@ -108,14 +108,14 @@ export default function CustomerModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 py-2 px-4 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-400 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
               disabled={isSubmitting}
             >
               취소
             </button>
             <button
               type="submit"
-              className="flex-1 py-2 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="flex-1 py-2 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-md shadow-blue-500/20"
               disabled={isSubmitting}
             >
               {isSubmitting ? "저장 중..." : "저장"}

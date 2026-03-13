@@ -10,6 +10,11 @@ body {
   color: #0f172a;
 }
 
+.dark body {
+  background-color: #020617;
+  color: #f8fafc;
+}
+
 /* Recharts Focus Outline 제거 */
 .recharts-wrapper:focus,
 .recharts-surface:focus,

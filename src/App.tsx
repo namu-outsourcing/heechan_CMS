@@ -1,13 +1,27 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import AuthGuard from "./components/layout/AuthGuard";
-import Layout from "./components/layout/Layout";
+import { useThemeStore } from "./hooks/useTheme";
+
+// Pages
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import Visits from "./pages/Visits";
-import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
+import Layout from "./components/layout/Layout";
+import AuthGuard from "./components/layout/AuthGuard";
 
 function App() {
+  const { isDarkMode } = useThemeStore();
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
   return (
     <BrowserRouter>
       <Routes>

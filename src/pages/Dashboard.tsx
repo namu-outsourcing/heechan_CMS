@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useVisitStore } from "../hooks/useVisits";
 import SalesSummaryCard from "../components/dashboard/SalesSummaryCard";
+import { useThemeStore } from "../hooks/useTheme";
 import { downloadSalesExcel } from "../utils/excel";
 import {
   Calendar,
@@ -54,6 +55,7 @@ const COLORS = [
 
 export default function Dashboard() {
   const { visits, isLoading, fetchVisits } = useVisitStore();
+  const { isDarkMode } = useThemeStore();
   const [filterMonth, setFilterMonth] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -231,8 +233,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">매출 대시보드</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>매출 대시보드</h2>
+        <p className={`text-sm mt-1 ${isDarkMode ? "text-slate-400" : "text-gray-500"}`}>
           헤어샵의 매출 흐름과 인기 시술을 시각적으로 파악합니다.
         </p>
       </div>
@@ -259,9 +261,9 @@ export default function Dashboard() {
           change={monthGrowth}
           trend={monthGrowth > 0 ? "up" : monthGrowth < 0 ? "down" : "neutral"}
         />
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col hover:shadow-md transition-all">
+        <div className={`backdrop-blur-md rounded-2xl shadow-sm border p-6 flex flex-col hover:shadow-md transition-all ${isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-white/80 border-gray-100"}`}>
           <div className="flex items-center justify-between mb-4">
-            <div className="p-2.5 bg-gray-50 text-gray-400 rounded-xl">
+            <div className={`p-2.5 rounded-xl ${isDarkMode ? "bg-slate-800 text-slate-400" : "bg-gray-50 text-gray-400"}`}>
               <Users className="w-5 h-5 ml-0" />
             </div>
             <div className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
@@ -269,24 +271,24 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="mb-1">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+            <h3 className={`text-sm font-semibold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}>
               이 달의 고객수
             </h3>
           </div>
-          <p className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          <p className={`text-3xl font-extrabold tracking-tight ${isDarkMode ? "text-white" : "text-gray-900"}`}>
             {monthlyVisits.length}
-            <span className="text-base font-medium text-gray-400 ml-1">건</span>
+            <span className={`text-base font-medium ml-1 ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}>건</span>
           </p>
-          <div className="mt-auto pt-4 border-t border-gray-50">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-50">
-              <span className="text-xs text-gray-400 font-medium tracking-tight">포인트 사용액</span>
-              <span className="text-sm font-bold text-rose-600">
+          <div className={`mt-auto pt-4 border-t ${isDarkMode ? "border-slate-800" : "border-gray-50"}`}>
+            <div className={`flex items-center justify-between pb-3 border-b ${isDarkMode ? "border-slate-800" : "border-gray-50"}`}>
+              <span className={`text-xs font-medium tracking-tight ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}>포인트 사용액</span>
+              <span className={`text-sm font-bold ${isDarkMode ? "text-rose-400" : "text-rose-600"}`}>
                 {formatCurrency(monthlyStats.points)}
               </span>
             </div>
             <div className="flex items-center justify-between pt-3">
-              <span className="text-xs text-gray-400 font-medium">평균 객단가 (실매출 기준)</span>
-              <span className="text-sm font-bold text-gray-700">
+              <span className={`text-xs font-medium ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}>평균 객단가 (실매출 기준)</span>
+              <span className={`text-sm font-bold ${isDarkMode ? "text-slate-300" : "text-gray-700"}`}>
                 {monthlyVisits.length > 0
                   ? formatCurrency(Math.round(monthlyStats.total / monthlyVisits.length))
                   : "0원"}
@@ -298,9 +300,9 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 월별 매출 추이 차트 */}
-        <div className="lg:col-span-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className={`backdrop-blur-md rounded-2xl shadow-sm border p-6 ${isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-white/80 border-gray-100"}`}>
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center">
+            <h3 className={`text-lg font-bold flex items-center ${isDarkMode ? "text-slate-100" : "text-gray-800"}`}>
               <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
               최근 6개월 매출 추이
             </h3>
@@ -326,30 +328,31 @@ export default function Dashboard() {
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
-                  stroke="#f1f5f9"
+                  stroke={isDarkMode ? "#1e293b" : "#f1f5f9"}
                 />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 500 }}
+                  tick={{ fill: isDarkMode ? "#64748b" : "#94a3b8", fontSize: 11, fontWeight: 500 }}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 500 }}
+                  tick={{ fill: isDarkMode ? "#64748b" : "#94a3b8", fontSize: 11, fontWeight: 500 }}
                   tickFormatter={(val) => `${val / 10000}만`}
                 />
                 <Tooltip
-                  cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+                  cursor={{ stroke: isDarkMode ? '#334155' : '#e2e8f0', strokeWidth: 1 }}
                   contentStyle={{
-                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    backgroundColor: isDarkMode ? "rgba(15, 23, 42, 0.9)" : "rgba(255, 255, 255, 0.9)",
                     backdropFilter: "blur(8px)",
-                    border: "1px solid #f1f5f9",
+                    border: isDarkMode ? "1px solid #1e293b" : "1px solid #f1f5f9",
                     borderRadius: "16px",
                     boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                    padding: "12px"
+                    padding: "12px",
+                    color: isDarkMode ? "#f8fafc" : "#0f172a"
                   }}
                   itemStyle={{ fontSize: '13px', fontWeight: 'bold' }}
                   formatter={(value: any) => [
@@ -377,34 +380,42 @@ export default function Dashboard() {
         </div>
 
         {/* 상세 분석 필터 카드 */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
-          <div className="p-2.5 bg-gray-50 text-gray-400 rounded-xl w-fit mb-4">
+        <div className={`backdrop-blur-md rounded-2xl shadow-sm border p-6 flex flex-col ${isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-white/80 border-gray-100"}`}>
+          <div className={`p-2.5 rounded-xl w-fit mb-4 ${isDarkMode ? "bg-slate-800 text-slate-400" : "bg-gray-50 text-gray-400"}`}>
             <Filter className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-bold text-gray-800 mb-1">데이터 필터</h3>
-          <p className="text-xs text-gray-500 mb-6">원하시는 월의 상세 데이터를 확인하세요.</p>
+          <h3 className={`text-lg font-bold mb-1 ${isDarkMode ? "text-slate-100" : "text-gray-800"}`}>데이터 필터</h3>
+          <p className={`text-xs mb-6 ${isDarkMode ? "text-slate-500" : "text-gray-500"}`}>원하시는 월의 상세 데이터를 확인하세요.</p>
           
           <div className="space-y-5">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+              <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ml-1 ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}>
                 분석 기준월
               </label>
               <input
                 type="month"
-                className="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-bold text-gray-700 transition-all cursor-pointer"
+                className={`w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-bold transition-all cursor-pointer ${
+                  isDarkMode 
+                    ? "bg-slate-800 border-slate-700 text-slate-100" 
+                    : "bg-white border-gray-100 text-gray-700"
+                }`}
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
               />
             </div>
             <button
               onClick={handleExportExcel}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all shadow-lg active:scale-95"
+              className={`w-full flex items-center justify-center space-x-2 px-4 py-3 font-bold rounded-xl transition-all shadow-lg active:scale-95 ${
+                isDarkMode 
+                  ? "bg-blue-600 text-white hover:bg-blue-700" 
+                  : "bg-gray-900 text-white hover:bg-black"
+              }`}
             >
               <Download className="w-4 h-4" />
               <span>보고서 추출</span>
             </button>
           </div>
-          <div className="mt-auto pt-6 text-[10px] text-gray-400 leading-relaxed font-medium">
+          <div className={`mt-auto pt-6 text-[10px] leading-relaxed font-medium ${isDarkMode ? "text-slate-600" : "text-gray-400"}`}>
             * 선택된 월({format(filterDate, "yyyy년 L월")})의 모든 방문 기록과 통계 데이터가 하단 차트에 반영됩니다.
           </div>
         </div>
@@ -412,22 +423,22 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 서비스 비중 차트 (도넛) */}
-        <div className="lg:col-span-2 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className={`lg:col-span-2 backdrop-blur-md rounded-2xl shadow-sm border p-6 ${isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-white/80 border-gray-100"}`}>
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center">
+            <h3 className={`text-lg font-bold flex items-center ${isDarkMode ? "text-slate-100" : "text-gray-800"}`}>
               <PieIcon className="w-5 h-5 mr-2 text-indigo-500" />
               분석 월 시술 카테고리 비중
             </h3>
-            <div className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+            <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? "bg-indigo-500/10 text-indigo-400 outline outline-1 outline-indigo-500/20" : "bg-indigo-50 text-indigo-600"}`}>
               Service Share
             </div>
           </div>
           <div className="h-80 w-full relative">
             {/* 도넛 중앙 텍스트 */}
             <div className="absolute top-1/2 left-[30%] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Total</div>
-              <div className="text-xl font-black text-gray-800 leading-none">
-                {Math.round(serviceStats.reduce((sum, s) => sum + s.value, 0) / 10000)}<span className="text-xs font-bold text-gray-400 ml-0.5">만</span>
+              <div className={`text-[10px] font-bold uppercase tracking-tighter ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}>Total</div>
+              <div className={`text-xl font-black leading-none ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+                {Math.round(serviceStats.reduce((sum, s) => sum + s.value, 0) / 10000)}<span className={`text-xs font-bold ml-0.5 ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}>만</span>
               </div>
             </div>
 
@@ -461,11 +472,12 @@ export default function Dashboard() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      backgroundColor: isDarkMode ? "rgba(15, 23, 42, 0.9)" : "rgba(255, 255, 255, 0.9)",
                       backdropFilter: "blur(8px)",
                       border: "none",
                       borderRadius: "12px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      color: isDarkMode ? "#f8fafc" : "#0f172a"
                     }}
                     formatter={(value: any) =>
                       `${Math.round(value).toLocaleString()}원`
@@ -487,7 +499,11 @@ export default function Dashboard() {
                       const percent = entry.payload?.percent;
                       const displayPercent = isNaN(percent) ? 0 : Math.round(percent * 100);
                       return (
-                        <span className={`text-[11px] font-bold transition-colors inline-block pb-1 ${activeServiceIdx === serviceStats.findIndex(s => s.name === value) ? 'text-indigo-600' : 'text-gray-500'}`}>
+                        <span className={`text-[11px] font-bold transition-colors inline-block pb-1 ${
+                          activeServiceIdx === serviceStats.findIndex(s => s.name === value) 
+                            ? (isDarkMode ? 'text-indigo-400' : 'text-indigo-600') 
+                            : (isDarkMode ? 'text-slate-500' : 'text-gray-500')
+                        }`}>
                           {value} ({displayPercent}%)
                         </span>
                       );
@@ -496,7 +512,7 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm italic">
+              <div className={`h-full flex items-center justify-center text-sm italic ${isDarkMode ? "text-slate-600" : "text-gray-400"}`}>
                 이번 달 시술 데이터가 부족합니다.
               </div>
             )}
@@ -504,9 +520,9 @@ export default function Dashboard() {
         </div>
 
         {/* 결제 수단 비중 (도넛 차트 추가) */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className={`backdrop-blur-md rounded-2xl shadow-sm border p-6 ${isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-white/80 border-gray-100"}`}>
            <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center">
+            <h3 className={`text-lg font-bold flex items-center ${isDarkMode ? "text-slate-100" : "text-gray-800"}`}>
               <Percent className="w-5 h-5 mr-2 text-emerald-500" />
               결제 수단 비중
             </h3>
@@ -549,6 +565,14 @@ export default function Dashboard() {
                   />
                 </Pie>
                 <Tooltip 
+                   contentStyle={{
+                     backgroundColor: isDarkMode ? "rgba(15, 23, 42, 0.9)" : "rgba(255, 255, 255, 0.9)",
+                     backdropFilter: "blur(8px)",
+                     border: "none",
+                     borderRadius: "12px",
+                     boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                     color: isDarkMode ? "#f8fafc" : "#0f172a"
+                   }}
                    formatter={(value: any) => `${value.toLocaleString()}원`}
                 />
               </PieChart>
@@ -556,20 +580,36 @@ export default function Dashboard() {
           </div>
           <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between text-xs px-1">
-              <div className={`flex items-center font-bold transition-colors ${activePaymentIdx === 0 ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div className={`flex items-center font-bold transition-colors ${
+                activePaymentIdx === 0 
+                  ? (isDarkMode ? 'text-indigo-400' : 'text-blue-600') 
+                  : (isDarkMode ? 'text-slate-500' : 'text-gray-400')
+              }`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
                 카드 결제
               </div>
-              <span className={`font-extrabold transition-colors ${activePaymentIdx === 0 ? 'text-blue-600' : 'text-gray-900'}`}>
+              <span className={`font-extrabold transition-colors ${
+                activePaymentIdx === 0 
+                  ? (isDarkMode ? 'text-blue-400' : 'text-blue-600') 
+                  : (isDarkMode ? 'text-slate-300' : 'text-gray-900')
+              }`}>
                 {monthlyStats.total > 0 ? Math.round((monthlyStats.card / monthlyStats.total) * 100) : 0}%
               </span>
             </div>
             <div className="flex items-center justify-between text-xs px-1">
-              <div className={`flex items-center font-bold transition-colors ${activePaymentIdx === 1 ? 'text-emerald-600' : 'text-gray-400'}`}>
+              <div className={`flex items-center font-bold transition-colors ${
+                activePaymentIdx === 1 
+                  ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') 
+                  : (isDarkMode ? 'text-slate-500' : 'text-gray-400')
+              }`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
                 현금 / 계좌
               </div>
-              <span className={`font-extrabold transition-colors ${activePaymentIdx === 1 ? 'text-emerald-600' : 'text-gray-900'}`}>
+              <span className={`font-extrabold transition-colors ${
+                activePaymentIdx === 1 
+                  ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600') 
+                  : (isDarkMode ? 'text-slate-300' : 'text-gray-900')
+              }`}>
                 {monthlyStats.total > 0 ? Math.round((monthlyStats.cash / monthlyStats.total) * 100) : 0}%
               </span>
             </div>
@@ -577,9 +617,9 @@ export default function Dashboard() {
         </div>
 
         {/* 인기 시술 TOP 3 위젯 */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className={`backdrop-blur-md rounded-2xl shadow-sm border p-6 ${isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-white/80 border-gray-100"}`}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center">
+            <h3 className={`text-lg font-bold flex items-center ${isDarkMode ? "text-slate-100" : "text-gray-800"}`}>
               <Trophy className="w-5 h-5 mr-2 text-amber-500" />
               인기 시술 TOP 3
             </h3>
@@ -587,27 +627,31 @@ export default function Dashboard() {
           <div className="space-y-4">
             {topServices.length > 0 ? (
               topServices.map((service, idx) => (
-                <div key={service.name} className="relative overflow-hidden p-4 bg-gray-50/50 rounded-xl border border-gray-50 group hover:bg-white hover:shadow-sm transition-all">
+                <div key={service.name} className={`relative overflow-hidden p-4 rounded-xl border group transition-all ${
+                  isDarkMode 
+                    ? "bg-slate-800/40 border-slate-800/60 hover:bg-slate-800 hover:border-slate-700 hover:shadow-lg hover:shadow-indigo-500/5" 
+                    : "bg-gray-50/50 border-gray-50 hover:bg-white hover:shadow-sm"
+                }`}>
                   <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center">
                       <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black mr-3 ${
-                        idx === 0 ? "bg-amber-100 text-amber-600" :
-                        idx === 1 ? "bg-slate-100 text-slate-500" :
-                        "bg-orange-100 text-orange-600"
+                        idx === 0 ? (isDarkMode ? "bg-amber-500/20 text-amber-400" : "bg-amber-100 text-amber-600") :
+                        idx === 1 ? (isDarkMode ? "bg-slate-700 text-slate-400" : "bg-slate-100 text-slate-500") :
+                        (isDarkMode ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600")
                       }`}>
                         {idx + 1}
                       </div>
                       <div>
-                        <div className="text-sm font-extrabold text-gray-800">{service.name}</div>
-                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">수행 횟수: {service.count}회</div>
+                        <div className={`text-sm font-extrabold ${isDarkMode ? "text-slate-100" : "text-gray-800"}`}>{service.name}</div>
+                        <div className={`text-[10px] font-bold uppercase tracking-tight ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}>수행 횟수: {service.count}회</div>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                    <ChevronRight className={`w-4 h-4 transition-colors ${isDarkMode ? "text-slate-600 group-hover:text-blue-400" : "text-gray-300 group-hover:text-blue-500"}`} />
                   </div>
-                  <div className="mt-2.5 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div className={`mt-2.5 h-1.5 w-full rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-gray-100"}`}>
                     <div 
                       className={`h-full rounded-full ${
-                        idx === 0 ? "bg-amber-400" : "bg-blue-400"
+                        idx === 0 ? (isDarkMode ? "bg-amber-500" : "bg-amber-400") : (isDarkMode ? "bg-blue-500" : "bg-blue-400")
                       }`}
                       style={{ width: `${(service.count / topServices[0].count) * 100}%` }}
                     />
@@ -615,7 +659,7 @@ export default function Dashboard() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-xs text-gray-400 font-medium">데이터 대기 중...</div>
+              <div className={`text-center py-8 text-xs font-medium ${isDarkMode ? "text-slate-600" : "text-gray-400"}`}>데이터 대기 중...</div>
             )}
           </div>
         </div>

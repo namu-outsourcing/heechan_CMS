@@ -65,43 +65,43 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center p-4 transition-colors">
       <div className="w-full max-w-sm">
         {/* 로고 영역 */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-4 overflow-hidden border border-gray-100">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white dark:bg-slate-900 rounded-3xl shadow-lg mb-4 overflow-hidden border border-gray-100 dark:border-slate-800 transition-all">
             <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">theo barbershop</h1>
-          <p className="text-sm text-gray-500 mt-1">관리자 로그인</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight transition-colors">theo barbershop</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 transition-colors">관리자 로그인</p>
         </div>
 
         {/* 로그인 카드 */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <form onSubmit={handleLogin} className="space-y-5">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-200 dark:border-slate-800 p-8 transition-colors">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2 transition-colors">
                 이메일
               </label>
               <input
                 type="email"
                 autoComplete="email"
                 placeholder="이메일 주소 입력"
-                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2 transition-colors">
                 비밀번호
               </label>
               <input
                 type="password"
                 autoComplete="current-password"
                 placeholder="비밀번호 입력"
-                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -109,7 +109,7 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+              <div className="p-4 bg-red-50 dark:bg-rose-900/20 border border-red-200 dark:border-rose-900/30 rounded-xl text-sm text-red-600 dark:text-rose-400 font-bold transition-all animate-in shake-in duration-300">
                 {error}
               </div>
             )}
@@ -117,14 +117,14 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60"
+              className="w-full py-3.5 px-4 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-black rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 shadow-lg shadow-blue-500/20 active:scale-[0.98]"
             >
-              {isLoading ? "로그인 중..." : "로그인"}
+              {isLoading ? "로그인 중..." : "시스템 접속"}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <p className="text-center text-xs text-gray-400 dark:text-slate-600 mt-8 font-medium transition-colors">
           이 시스템은 관리자 전용입니다.
         </p>
       </div>
