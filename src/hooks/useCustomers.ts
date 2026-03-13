@@ -20,7 +20,7 @@ interface CustomerState {
   deleteCustomer: (id: string) => Promise<boolean>;
 }
 
-export const useCustomerStore = create<CustomerState>((set) => ({
+export const useCustomerStore = create<CustomerState>((set, get) => ({
   customers: [],
   isLoading: false,
   error: null,
@@ -78,7 +78,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
       const { error } = await supabase.from("customers").insert(customerData);
 
       if (error) throw error;
-      set((state) => ({ ...state })); // 재호출 유도를 위해 상태만 변경
+      await get().fetchCustomers();
       return true;
     } catch (err: any) {
       set({ error: err.message || "An error occurred" });
@@ -98,6 +98,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
         .eq("id", id);
 
       if (error) throw error;
+      await get().fetchCustomers();
       return true;
     } catch (err: any) {
       set({ error: err.message || "An error occurred" });
@@ -110,6 +111,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
       const { error } = await supabase.from("customers").delete().eq("id", id);
 
       if (error) throw error;
+      await get().fetchCustomers();
       return true;
     } catch (err: any) {
       console.error(err);

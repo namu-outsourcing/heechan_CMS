@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { Visit } from "../types";
+import { useCustomerStore } from "./useCustomers";
 
 export interface VisitWithCustomer extends Visit {
   customers: { name: string; phone: string };
@@ -16,7 +17,7 @@ interface VisitState {
   deleteVisit: (id: string) => Promise<boolean>;
 }
 
-export const useVisitStore = create<VisitState>((set) => ({
+export const useVisitStore = create<VisitState>((set, get) => ({
   visits: [],
   isLoading: false,
   error: null,
@@ -49,6 +50,11 @@ export const useVisitStore = create<VisitState>((set) => ({
       const { error } = await supabase.from("visits").insert(visitData);
 
       if (error) throw error;
+      
+      // 관련 상태 모두 최신화
+      await get().fetchVisits();
+      await useCustomerStore.getState().fetchCustomers();
+      
       return true;
     } catch (err: any) {
       set({ error: err.message || "An error occurred" });
@@ -73,6 +79,10 @@ export const useVisitStore = create<VisitState>((set) => ({
         .eq("id", id);
 
       if (error) throw error;
+      
+      await get().fetchVisits();
+      await useCustomerStore.getState().fetchCustomers();
+      
       return true;
     } catch (err: any) {
       set({ error: err.message || "An error occurred" });
@@ -85,6 +95,10 @@ export const useVisitStore = create<VisitState>((set) => ({
       const { error } = await supabase.from("visits").delete().eq("id", id);
 
       if (error) throw error;
+      
+      await get().fetchVisits();
+      await useCustomerStore.getState().fetchCustomers();
+      
       return true;
     } catch (err: any) {
       set({ error: err.message || "An error occurred" });

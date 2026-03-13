@@ -16,52 +16,64 @@ interface ServiceState {
   deleteService: (id: string) => Promise<boolean>;
 }
 
-export const useServiceStore = create<ServiceState>((set) => ({
+export const useServiceStore = create<ServiceState>((set, get) => ({
   services: [],
   isLoading: false,
 
   fetchServices: async () => {
     set({ isLoading: true });
-    const { data, error } = await supabase
-      .from("service_categories")
-      .select("*")
-      .order("created_at");
-    if (!error && data) set({ services: data as ServiceCategory[] });
-    set({ isLoading: false });
+    try {
+      const { data, error } = await supabase
+        .from("service_categories")
+        .select("*")
+        .order("created_at");
+      if (!error && data) set({ services: data as ServiceCategory[] });
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   addService: async (serviceData) => {
-    const { error } = await supabase
-      .from("service_categories")
-      .insert(serviceData);
-    if (error) {
+    try {
+      const { error } = await supabase
+        .from("service_categories")
+        .insert(serviceData);
+      if (error) throw error;
+      await get().fetchServices();
+      return true;
+    } catch (error) {
       console.error(error);
       return false;
     }
-    return true;
   },
 
   updateService: async (id, updated) => {
-    const { error } = await supabase
-      .from("service_categories")
-      .update({ name: updated.name, price: updated.price })
-      .eq("id", id);
-    if (error) {
+    try {
+      const { error } = await supabase
+        .from("service_categories")
+        .update({ name: updated.name, price: updated.price })
+        .eq("id", id);
+      if (error) throw error;
+      await get().fetchServices();
+      return true;
+    } catch (error) {
       console.error(error);
       return false;
     }
-    return true;
   },
 
   deleteService: async (id) => {
-    const { error } = await supabase
-      .from("service_categories")
-      .delete()
-      .eq("id", id);
-    if (error) {
+    try {
+      const { error } = await supabase
+        .from("service_categories")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+      await get().fetchServices();
+      return true;
+    } catch (error) {
       console.error(error);
       return false;
     }
-    return true;
   },
 }));

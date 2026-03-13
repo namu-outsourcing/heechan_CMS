@@ -87,11 +87,7 @@ export default function Visits() {
           <VisitTable
             visits={visits}
             onEdit={handleOpenEditModal}
-            onDelete={(id) => {
-              deleteVisit(id).then((success) => {
-                if (success) fetchVisits();
-              });
-            }}
+            onDelete={deleteVisit}
           />
         )}
       </div>

@@ -59,13 +59,9 @@ export default function Customers() {
 
   const handleSave = async (data: any) => {
     if (editingCustomer) {
-      const success = await updateCustomer(editingCustomer.id, data);
-      if (success) fetchCustomers();
-      return success;
+      return await updateCustomer(editingCustomer.id, data);
     } else {
-      const success = await addCustomer(data);
-      if (success) fetchCustomers();
-      return success;
+      return await addCustomer(data);
     }
   };
 
