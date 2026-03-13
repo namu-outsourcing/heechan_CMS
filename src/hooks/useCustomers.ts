@@ -34,7 +34,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
         .select(
           `
           *,
-          visits(visited_at)
+          visits(visited_at, points_earned, points_used)
         `,
         )
         .order("name");
