@@ -12,7 +12,6 @@ import {
   Users,
   Percent,
   ChevronRight,
-  Minus,
 } from "lucide-react";
 import {
   startOfMonth,
@@ -245,23 +244,17 @@ export default function Dashboard() {
           total={todayStats.total}
           cardAmount={todayStats.card}
           cashAmount={todayStats.cash}
+          pointAmount={todayStats.points}
           icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
           change={todayGrowth}
           trend={todayGrowth > 0 ? "up" : todayGrowth < 0 ? "down" : "neutral"}
         />
         <SalesSummaryCard
-          title="오늘 사용된 포인트"
-          total={todayStats.points}
-          cardAmount={0}
-          cashAmount={0}
-          hideDetails={true}
-          icon={<Minus className="w-5 h-5 text-rose-500" />}
-        />
-        <SalesSummaryCard
-          title={`${format(filterDate, "L월")} 매출`}
+          title={`${format(filterDate, "L월")} 매출 요약`}
           total={monthlyStats.total}
           cardAmount={monthlyStats.card}
           cashAmount={monthlyStats.cash}
+          pointAmount={monthlyStats.points}
           icon={<Calendar className="w-5 h-5 text-indigo-600" />}
           change={monthGrowth}
           trend={monthGrowth > 0 ? "up" : monthGrowth < 0 ? "down" : "neutral"}

@@ -11,7 +11,8 @@ interface Props {
   trend?: "up" | "down" | "neutral";
   cardLabel?: string;
   cashLabel?: string;
-  hideDetails?: boolean;
+  pointAmount?: number;
+  pointLabel?: string;
 }
 
 export default function SalesSummaryCard({
@@ -24,7 +25,8 @@ export default function SalesSummaryCard({
   trend = "neutral",
   cardLabel = "카드 결제",
   cashLabel = "현금 / 계좌",
-  hideDetails = false,
+  pointAmount,
+  pointLabel = "포인트 차감",
 }: Props) {
   const isUp = trend === "up";
   const isDown = trend === "down";
@@ -66,28 +68,37 @@ export default function SalesSummaryCard({
         </div>
       </div>
 
-      {!hideDetails && (
-        <div className="mt-auto space-y-2.5 pt-4 border-t border-gray-50">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-gray-400 flex items-center font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
-              {cardLabel}
-            </span>
-            <span className="font-bold text-gray-700">
-              {formatCurrency(cardAmount)}
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-gray-400 flex items-center font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
-              {cashLabel}
-            </span>
-            <span className="font-bold text-gray-700">
-              {formatCurrency(cashAmount)}
-            </span>
-          </div>
+      <div className="mt-auto space-y-2.5 pt-4 border-t border-gray-50">
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-gray-400 flex items-center font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
+            {cardLabel}
+          </span>
+          <span className="font-bold text-gray-700">
+            {formatCurrency(cardAmount)}
+          </span>
         </div>
-      )}
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-gray-400 flex items-center font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
+            {cashLabel}
+          </span>
+          <span className="font-bold text-gray-700">
+            {formatCurrency(cashAmount)}
+          </span>
+        </div>
+        {pointAmount !== undefined && pointAmount > 0 && (
+          <div className="flex justify-between items-center text-xs border-t border-gray-50/50 pt-2.5 mt-2.5">
+            <span className="text-gray-400 flex items-center font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mr-2"></span>
+              {pointLabel}
+            </span>
+            <span className="font-bold text-rose-500">
+              -{formatCurrency(pointAmount)}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
