@@ -26,6 +26,7 @@ import {
   startOfToday,
 } from "date-fns";
 import { ko } from "date-fns/locale";
+import { formatCurrency } from "../utils/format";
 import {
   LineChart,
   Line,
@@ -273,9 +274,8 @@ export default function Dashboard() {
             <span className="text-xs text-gray-400 font-medium">평균 객단가</span>
             <span className="text-sm font-bold text-gray-700">
               {monthlyVisits.length > 0
-                ? Math.round(monthlyStats.total / monthlyVisits.length).toLocaleString()
-                : 0}
-              원
+                ? formatCurrency(Math.round(monthlyStats.total / monthlyVisits.length))
+                : "0원"}
             </span>
           </div>
         </div>
@@ -338,7 +338,7 @@ export default function Dashboard() {
                   }}
                   itemStyle={{ fontSize: '13px', fontWeight: 'bold' }}
                   formatter={(value: any) => [
-                    `${value.toLocaleString()}원`,
+                    formatCurrency(value),
                     "매출액",
                   ]}
                 />

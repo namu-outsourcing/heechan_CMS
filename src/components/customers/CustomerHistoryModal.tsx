@@ -1,7 +1,7 @@
 import React from "react";
 import { X, Calendar, ClipboardList } from "lucide-react";
-import { format } from "date-fns";
 import { CustomerWithLastVisit } from "../../types";
+import { formatFullDate, formatCurrency } from "../../utils/format";
 import { useVisitStore } from "../../hooks/useVisits";
 
 interface Props {
@@ -64,13 +64,13 @@ export default function CustomerHistoryModal({
                   <div className="ml-14 flex-1 bg-white border border-gray-100 rounded-xl p-4 shadow-sm group-hover:border-blue-200 transition-colors">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
                       <span className="text-lg font-bold text-gray-800">
-                        {format(new Date(v.visited_at), "yyyy년 MM월 dd일")}
+                        {formatFullDate(v.visited_at)}
                       </span>
                       <span
                         className={`px-2 py-1 text-xs font-semibold rounded-md ${v.payment_method === "card" ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}
                       >
                         {v.payment_method === "card" ? "💳 카드" : "💵 현금"} ·{" "}
-                        {v.payment_amount.toLocaleString()}원
+                        {formatCurrency(v.payment_amount)}
                       </span>
                     </div>
 
@@ -88,6 +88,20 @@ export default function CustomerHistoryModal({
                       ) : (
                         <span className="text-xs text-gray-400 italic">
                           기록된 시술 정보 없음
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 포인트 내역 */}
+                    <div className="flex gap-2 mb-3">
+                      {v.points_earned > 0 && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-600 rounded border border-blue-100">
+                          💰 +{v.points_earned.toLocaleString()}P 적립
+                        </span>
+                      )}
+                      {v.points_used > 0 && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-red-50 text-red-600 rounded border border-red-100">
+                          🎫 -{v.points_used.toLocaleString()}P 사용
                         </span>
                       )}
                     </div>

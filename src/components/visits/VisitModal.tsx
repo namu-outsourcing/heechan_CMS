@@ -3,6 +3,7 @@ import { useCustomerStore } from "../../hooks/useCustomers";
 import { useServiceStore } from "../../hooks/useServices";
 import { X, UserPlus, Search, Check } from "lucide-react";
 import { ServiceCategory, Customer } from "../../types";
+import { formatCurrency } from "../../utils/format";
 
 // VisitWithCustomer 타입 재구성 (순환 import 방지를 위해 로컬 정의)
 interface VisitSaveData {
@@ -12,6 +13,8 @@ interface VisitSaveData {
   payment_method: "card" | "cash";
   services?: string[];
   memo?: string;
+  points_earned: number;
+  points_used: number;
 }
 
 interface Props {
@@ -44,6 +47,8 @@ export default function VisitModal({
     [],
   );
   const [memo, setMemo] = useState(initialData?.memo || "");
+  const [pointsEarned, setPointsEarned] = useState(initialData?.points_earned?.toString() || "0");
+  const [pointsUsed, setPointsUsed] = useState(initialData?.points_used?.toString() || "0");
 
   // 신규 고객 등록 모드
   const [isNewCustomerMode, setIsNewCustomerMode] = useState(false);
@@ -109,6 +114,8 @@ export default function VisitModal({
       setPaymentMethod(initialData?.payment_method || "card");
       setSelectedServices([]);
       setMemo(initialData?.memo || "");
+      setPointsEarned(initialData?.points_earned?.toString() || "0");
+      setPointsUsed(initialData?.points_used?.toString() || "0");
       setIsNewCustomerMode(false);
     }
   }, [isOpen, initialData]);
@@ -166,6 +173,8 @@ export default function VisitModal({
       payment_method: paymentMethod,
       services: selectedServices.map((s) => s.name),
       memo,
+      points_earned: parseInt(pointsEarned) || 0,
+      points_used: parseInt(pointsUsed) || 0,
     });
     setIsSubmitting(false);
     if (success) {
@@ -350,7 +359,7 @@ export default function VisitModal({
                       <span
                         className={`ml-1.5 text-xs ${isSelected ? "text-blue-100" : "text-gray-400"}`}
                       >
-                        {s.price.toLocaleString()}원
+                        {formatCurrency(s.price)}
                       </span>
                     </button>
                   );
@@ -359,10 +368,9 @@ export default function VisitModal({
               {selectedServices.length > 0 && (
                 <p className="mt-2 text-xs text-blue-600 font-medium">
                   선택 합계:{" "}
-                  {selectedServices
-                    .reduce((acc, s) => acc + s.price, 0)
-                    .toLocaleString()}
-                  원 (금액은 아래에서 수정 가능)
+                  {formatCurrency(selectedServices
+                    .reduce((acc, s) => acc + s.price, 0))}
+                  (금액은 아래에서 수정 가능)
                 </p>
               )}
             </div>
@@ -427,6 +435,37 @@ export default function VisitModal({
                 />
                 💵 현금 / 계좌
               </label>
+            </div>
+          </div>
+
+          {/* 포인트 적립/사용 */}
+          <div className="grid grid-cols-2 gap-4 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+            <div>
+              <label className="block text-xs font-bold text-blue-700 mb-1.5">
+                💰 적립 포인트
+              </label>
+              <input
+                type="number"
+                className="w-full p-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                placeholder="0"
+                value={pointsEarned}
+                onChange={(e) => setPointsEarned(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-red-700 mb-1.5">
+                🎫 사용 포인트 (보유: {(selectedCustomer?.total_points || 0).toLocaleString()}P)
+              </label>
+              <input
+                type="number"
+                className="w-full p-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
+                placeholder="0"
+                value={pointsUsed}
+                onChange={(e) => setPointsUsed(e.target.value)}
+              />
+              {parseInt(pointsUsed) > (selectedCustomer?.total_points || 0) && (
+                <p className="text-[10px] text-red-500 mt-1 font-medium">잔액이 부족합니다.</p>
+              )}
             </div>
           </div>
 

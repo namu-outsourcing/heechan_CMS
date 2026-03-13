@@ -6,6 +6,8 @@ CREATE TABLE visits (
   payment_amount INT NOT NULL,
   payment_method TEXT NOT NULL CHECK (payment_method IN ('card', 'cash')),
   memo TEXT,
+  points_earned INT DEFAULT 0,
+  points_used INT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -1,5 +1,5 @@
-import React from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { formatCurrency } from "../../utils/format";
 
 interface Props {
   title: string;
@@ -56,8 +56,7 @@ export default function SalesSummaryCard({
 
       <div className="mb-6">
         <div className="text-3xl font-extrabold text-gray-900 tracking-tight">
-          {total.toLocaleString()}
-          <span className="text-base font-medium text-gray-400 ml-1">원</span>
+          {formatCurrency(total)}
         </div>
       </div>
 
@@ -68,7 +67,7 @@ export default function SalesSummaryCard({
             카드 결제
           </span>
           <span className="font-bold text-gray-700">
-            {cardAmount.toLocaleString()}원
+            {formatCurrency(cardAmount)}
           </span>
         </div>
         <div className="flex justify-between items-center text-xs">
@@ -77,7 +76,7 @@ export default function SalesSummaryCard({
             현금 / 계좌
           </span>
           <span className="font-bold text-gray-700">
-            {cashAmount.toLocaleString()}원
+            {formatCurrency(cashAmount)}
           </span>
         </div>
       </div>

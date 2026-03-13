@@ -1,6 +1,6 @@
 import { CustomerWithLastVisit } from "../../types";
-import { format } from "date-fns";
 import { Edit2, Trash2 } from "lucide-react";
+import { formatDate, formatPhone } from "../../utils/format";
 
 interface Props {
   customers: CustomerWithLastVisit[];
@@ -31,6 +31,7 @@ export default function CustomerTable({
             <th className="px-4 py-3">고객 정보</th>
             <th className="px-4 py-3">메모</th>
             <th className="px-4 py-3">최근 방문일</th>
+            <th className="px-4 py-3">보유 포인트</th>
             <th className="px-4 py-3 text-right">관리</th>
           </tr>
         </thead>
@@ -45,7 +46,7 @@ export default function CustomerTable({
                 <div className="font-medium text-gray-900 group-hover/row:text-blue-600 transition-colors">
                   {c.name}
                 </div>
-                <div className="text-xs text-gray-400 font-medium">{c.phone || "-"}</div>
+                <div className="text-xs text-gray-400 font-medium">{formatPhone(c.phone)}</div>
               </td>
               <td className="px-4 py-3">
                 {c.memo ? (
@@ -61,8 +62,13 @@ export default function CustomerTable({
               </td>
               <td className="px-4 py-3 text-gray-500">
                 {c.last_visited_at
-                  ? format(new Date(c.last_visited_at), "yyyy.MM.dd")
+                  ? formatDate(c.last_visited_at)
                   : "기록 없음"}
+              </td>
+              <td className="px-4 py-3">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                  {(c.total_points || 0).toLocaleString()}P
+                </span>
               </td>
               <td
                 className="px-4 py-3 border-t-0 text-right whitespace-nowrap"

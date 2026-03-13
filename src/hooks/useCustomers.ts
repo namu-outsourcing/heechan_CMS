@@ -43,19 +43,25 @@ export const useCustomerStore = create<CustomerState>((set) => ({
 
       // 데이터 정제
       const formattedData = data.map((c: any) => {
-        // visits 중 가장 최근 날짜 찾기
         const sortedVisits = c.visits?.sort(
           (a: any, b: any) =>
             new Date(b.visited_at).getTime() - new Date(a.visited_at).getTime(),
         );
+
         const last_visited_at =
           sortedVisits && sortedVisits.length > 0
             ? sortedVisits[0].visited_at
             : undefined;
 
+        const total_points = (c.visits || []).reduce(
+          (acc: number, v: any) => acc + (v.points_earned || 0) - (v.points_used || 0),
+          0
+        );
+
         return {
           ...c,
           last_visited_at,
+          total_points,
         };
       }) as CustomerWithLastVisit[];
 
@@ -75,7 +81,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
       set((state) => ({ ...state })); // 재호출 유도를 위해 상태만 변경
       return true;
     } catch (err: any) {
-      console.error(err);
+      set({ error: err.message || "An error occurred" });
       return false;
     }
   },
@@ -94,7 +100,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
       if (error) throw error;
       return true;
     } catch (err: any) {
-      console.error(err);
+      set({ error: err.message || "An error occurred" });
       return false;
     }
   },

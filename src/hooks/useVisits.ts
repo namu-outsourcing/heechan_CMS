@@ -51,7 +51,7 @@ export const useVisitStore = create<VisitState>((set) => ({
       if (error) throw error;
       return true;
     } catch (err: any) {
-      console.error(err);
+      set({ error: err.message || "An error occurred" });
       return false;
     }
   },
@@ -67,13 +67,15 @@ export const useVisitStore = create<VisitState>((set) => ({
           payment_method: updatedData.payment_method,
           services: updatedData.services,
           memo: updatedData.memo,
+          points_earned: updatedData.points_earned,
+          points_used: updatedData.points_used,
         })
         .eq("id", id);
 
       if (error) throw error;
       return true;
     } catch (err: any) {
-      console.error(err);
+      set({ error: err.message || "An error occurred" });
       return false;
     }
   },
@@ -85,7 +87,7 @@ export const useVisitStore = create<VisitState>((set) => ({
       if (error) throw error;
       return true;
     } catch (err: any) {
-      console.error(err);
+      set({ error: err.message || "An error occurred" });
       return false;
     }
   },
