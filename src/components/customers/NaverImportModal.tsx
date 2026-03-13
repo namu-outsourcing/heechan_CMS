@@ -16,7 +16,7 @@ interface NaverRecord {
 interface MappingResult {
   record: NaverRecord;
   matchedCustomer: Customer | null;
-  status: "match" | "new" | "ambiguous";
+  status: "match" | "new" | "ambiguous" | "duplicate";
 }
 
 interface Props {
@@ -26,7 +26,7 @@ interface Props {
 
 export default function NaverImportModal({ isOpen, onClose }: Props) {
   const { customers, fetchCustomers } = useCustomerStore();
-  const { addVisit } = useVisitStore();
+  const { addVisit, visits, fetchVisits } = useVisitStore();
 
   const [file, setFile] = useState<File | null>(null);
   const [naverId, setNaverId] = useState("");
@@ -67,6 +67,7 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
       // 기존 고객과 매핑 로직
       const results: MappingResult[] = parsedRecords.map(record => {
         const last4 = record.phone.replace(/[^0-9]/g, "").slice(-4);
+        const recordDate = record.visitedAt.split(' ')[0]; // "2026-03-10"
         
         // 1. 이름 + 번호 끝 4자리 완전 일치 검색
         const match = customers.find(c => {
@@ -74,10 +75,18 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
           return c.name === record.name && cPhoneLast4 === last4;
         });
 
+        // 2. 중복 방문 기록 체크 (같은 날짜 + 같은 고객ID)
+        const isDuplicate = match && visits.some(v => {
+          // 네이버 엑셀 날짜 형식이 2026-03-10 또는 2026.03.10 등 다양할 수 있으므로 정규화 처리
+          const normRecordDate = recordDate.replace(/[^0-9]/g, "");
+          const normVDate = v.visited_at.replace(/[^0-9]/g, "").slice(0, 8);
+          return v.customer_id === match.id && normVDate === normRecordDate;
+        });
+
         return {
           record,
           matchedCustomer: match || null,
-          status: match ? "match" : "new"
+          status: isDuplicate ? "duplicate" : (match ? "match" : "new")
         };
       });
 
@@ -94,8 +103,14 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
   const handleImport = async () => {
     setIsProcessing(true);
     let successCount = 0;
+    let skipCount = 0;
 
     for (const m of mappings) {
+      if (m.status === "duplicate") {
+        skipCount++;
+        continue;
+      }
+
       try {
         let customerId = m.matchedCustomer?.id;
 
@@ -126,8 +141,9 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
       }
     }
 
-    alert(`${successCount}건의 데이터가 성공적으로 임포트되었습니다.`);
+    alert(`${successCount}건의 데이터가 성공적으로 임포트되었습니다.${skipCount > 0 ? `\n(중복된 ${skipCount}건은 제외되었습니다.)` : ""}`);
     fetchCustomers();
+    fetchVisits();
     onClose();
     setIsProcessing(false);
   };
@@ -219,7 +235,12 @@ export default function NaverImportModal({ isOpen, onClose }: Props) {
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      {m.status === 'match' ? (
+                      {m.status === 'duplicate' ? (
+                        <div className="flex items-center px-2 py-1 bg-gray-100 text-gray-500 rounded-lg">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          <span className="text-[10px] font-bold">이미 등록됨 (Skip)</span>
+                        </div>
+                      ) : m.status === 'match' ? (
                         <div className="flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg">
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                           <span className="text-[10px] font-bold">기존 고객 매칭됨</span>

@@ -5,8 +5,7 @@ import { CustomerWithLastVisit } from "../types";
 import CustomerTable from "../components/customers/CustomerTable";
 import CustomerModal from "../components/customers/CustomerModal";
 import CustomerHistoryModal from "../components/customers/CustomerHistoryModal";
-import NaverImportModal from "../components/customers/NaverImportModal";
-import { Search, Plus, FileSpreadsheet } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 
 export default function Customers() {
   const {
@@ -25,9 +24,6 @@ export default function Customers() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] =
     useState<CustomerWithLastVisit | null>(null);
-
-  // 네이버 임포트 모달 상태
-  const [isNaverImportModalOpen, setIsNaverImportModalOpen] = useState(false);
 
   // 히스토리 모달 관련 상태
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -82,22 +78,13 @@ export default function Customers() {
             고객 명단을 클릭하여 상세 방문 내역을 확인하거나 정보를 수정하세요.
           </p>
         </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setIsNaverImportModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
-          >
-            <FileSpreadsheet className="w-5 h-5 mr-1 text-green-600" />
-            네이버 임포트
-          </button>
-          <button
-            onClick={handleOpenAddModal}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
-          >
-            <Plus className="w-5 h-5 mr-1" />
-            고객 등록
-          </button>
-        </div>
+        <button
+          onClick={handleOpenAddModal}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
+        >
+          <Plus className="w-5 h-5 mr-1" />
+          고객 등록
+        </button>
       </div>
 
       {error && (
@@ -145,11 +132,6 @@ export default function Customers() {
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
         customer={selectedCustomer}
-      />
-
-      <NaverImportModal
-        isOpen={isNaverImportModalOpen}
-        onClose={() => setIsNaverImportModalOpen(false)}
       />
     </div>
   );
