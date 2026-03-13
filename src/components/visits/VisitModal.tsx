@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useCustomerStore } from "../../hooks/useCustomers";
 import { useServiceStore } from "../../hooks/useServices";
-import { X, UserPlus, Search, Check } from "lucide-react";
-import { ServiceCategory, Customer } from "../../types";
+import { X, UserPlus, Search, Check, Calculator } from "lucide-react";
+import { ServiceCategory } from "../../types";
 import { formatCurrency } from "../../utils/format";
 
-// VisitWithCustomer 타입 재구성 (순환 import 방지를 위해 로컬 정의)
 interface VisitSaveData {
   customer_id: string;
   visited_at: string;
@@ -49,8 +48,8 @@ export default function VisitModal({
   const [memo, setMemo] = useState(initialData?.memo || "");
   const [pointsEarned, setPointsEarned] = useState(initialData?.points_earned?.toString() || "0");
   const [pointsUsed, setPointsUsed] = useState(initialData?.points_used?.toString() || "0");
+  const [serviceTotal, setServiceTotal] = useState("");
 
-  // 신규 고객 등록 모드
   const [isNewCustomerMode, setIsNewCustomerMode] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
@@ -60,45 +59,32 @@ export default function VisitModal({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Esc 키 및 외부 클릭 핸들러
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
     };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsDropdownOpen(false);
-      }
-    };
-
     if (isDropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      window.addEventListener("keydown", handleKeyDown);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isDropdownOpen]);
 
-  // 현재 선택된 고객 객체
   const selectedCustomer = useMemo(() => 
     customers.find(c => c.id === customerId),
     [customers, customerId]
   );
 
-  // 검색 결과 필터링
   const searchedCustomers = useMemo(() => {
-    if (!searchQuery.trim()) return customers.slice(0, 10); // 기본 10명 노출
+    if (!searchQuery.trim()) return customers.slice(0, 10);
     const lowerQuery = searchQuery.toLowerCase().replace(/-/g, "");
     return customers.filter(c => 
       c.name.toLowerCase().includes(lowerQuery) || 
       (c.phone || "").replace(/-/g, "").includes(lowerQuery)
-    ).slice(0, 15); // 최대 15명 노출
+    ).slice(0, 15);
   }, [customers, searchQuery]);
 
   useEffect(() => {
@@ -106,33 +92,31 @@ export default function VisitModal({
       if (customers.length === 0) fetchCustomers();
       fetchServices();
       setCustomerId(initialData?.customer_id || "");
-      setSearchQuery(""); // 검색어 초기화
-      setVisitedAt(
-        initialData?.visited_at || new Date().toISOString().split("T")[0],
-      );
+      setSearchQuery("");
+      setVisitedAt(initialData?.visited_at || new Date().toISOString().split("T")[0]);
       setPaymentAmount(initialData?.payment_amount?.toString() || "");
       setPaymentMethod(initialData?.payment_method || "card");
       setSelectedServices([]);
       setMemo(initialData?.memo || "");
       setPointsEarned(initialData?.points_earned?.toString() || "0");
       setPointsUsed(initialData?.points_used?.toString() || "0");
+      setServiceTotal(initialData?.payment_amount ? (initialData.payment_amount + (initialData.points_used || 0)).toString() : "");
       setIsNewCustomerMode(false);
     }
   }, [isOpen, initialData]);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (serviceTotal) {
+      const total = parseInt(serviceTotal) || 0;
+      const used = parseInt(pointsUsed) || 0;
+      setPaymentAmount((total - used).toString());
+    }
+  }, [serviceTotal, pointsUsed]);
 
-  // 칩 토글 + 금액 자동합산
   const toggleService = (service: ServiceCategory) => {
     setSelectedServices((prev) => {
       const exists = prev.find((s) => s.id === service.id);
-      const updated = exists
-        ? prev.filter((s) => s.id !== service.id)
-        : [...prev, service];
-      // 자동 합산 업데이트
-      const total = updated.reduce((acc, s) => acc + s.price, 0);
-      setPaymentAmount(total > 0 ? total.toString() : "");
-      return updated;
+      return exists ? prev.filter((s) => s.id !== service.id) : [...prev, service];
     });
   };
 
@@ -183,54 +167,61 @@ export default function VisitModal({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden max-h-[92vh] flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b border-gray-100 shrink-0">
-          <h3 className="text-lg font-bold text-gray-800">
-            {initialData ? "방문 기록 수정" : "새 방문 기록"}
-          </h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
+      <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transform transition-all scale-100">
+        {/* 헤더 */}
+        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-50 rounded-xl">
+              <UserPlus className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">
+                {initialData ? "방문 기록 수정" : "방문 기록 추가"}
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5 font-medium">서비스 내역과 결제 정보를 기록합니다.</p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="overflow-y-auto flex-1 p-5 space-y-5"
-        >
-          {/* 고객 선택 */}
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-sm font-medium text-gray-700">
-                고객 선택 *
-              </label>
+        <form onSubmit={handleSubmit} className="px-6 py-6 space-y-7 overflow-y-auto custom-scrollbar">
+          {/* 고객 선택 섹션 */}
+          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-bold text-gray-700 tracking-tight">고객 정보 *</label>
               {!initialData && (
                 <button
                   type="button"
                   onClick={() => setIsNewCustomerMode(!isNewCustomerMode)}
-                  className="text-xs font-medium text-blue-600 flex items-center hover:text-blue-800"
+                  className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded transition-all ${
+                    isNewCustomerMode ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                  }`}
                 >
-                  <UserPlus className="w-3 h-3 mr-1" />
-                  {isNewCustomerMode ? "기존 고객 검색" : "신규 고객 등록"}
+                  {isNewCustomerMode ? "기존 고객 찾기" : "신규 고객으로 등록"}
                 </button>
               )}
             </div>
+
             {!isNewCustomerMode ? (
               <div className="relative">
                 {selectedCustomer && !isDropdownOpen ? (
-                  /* 선택된 상태 UI */
-                  <div className="flex items-center justify-between p-2.5 bg-blue-50 border border-blue-200 rounded-lg group animate-in fade-in zoom-in duration-200">
+                  <div className="flex items-center justify-between p-3 bg-white border border-blue-100 rounded-xl shadow-sm">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs mr-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-black mr-3 shadow-inner">
                         {selectedCustomer.name[0]}
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-blue-900">{selectedCustomer.name}</div>
-                        <div className="text-[10px] text-blue-500 font-medium">{selectedCustomer.phone || "연락처 없음"}</div>
+                        <div className="text-sm font-bold text-gray-900">{selectedCustomer.name}</div>
+                        <div className="text-[10px] text-gray-400 font-medium">{selectedCustomer.phone || "연락처 없음"}</div>
                       </div>
                     </div>
                     {!initialData && (
@@ -241,67 +232,51 @@ export default function VisitModal({
                           setSearchQuery("");
                           setIsDropdownOpen(true);
                         }}
-                        className="text-xs text-blue-400 hover:text-blue-600 font-bold"
+                        className="text-xs text-blue-500 font-bold hover:underline"
                       >
                         변경
                       </button>
                     )}
                   </div>
                 ) : (
-                  /* 검색 입력 상태 */
-                  <div className="relative" ref={searchContainerRef}>
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <div ref={searchContainerRef} className="relative">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="이름 또는 전화번호로 검색"
-                      className="w-full pl-9 pr-4 py-2.5 border border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
+                      className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
+                      placeholder="고객 이름 또는 연락처 검색..."
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
                         setIsDropdownOpen(true);
                       }}
                       onFocus={() => setIsDropdownOpen(true)}
-                      disabled={!!initialData}
                     />
-                    
-                    {/* 드롭다운 결과 */}
                     {isDropdownOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-[60] py-2 max-h-60 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
+                      <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95">
                         {searchedCustomers.length > 0 ? (
-                          searchedCustomers.map((c: Customer) => (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => {
-                                setCustomerId(c.id);
-                                setIsDropdownOpen(false);
-                                setSearchQuery("");
-                              }}
-                              className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                            >
-                              <div className="flex items-center text-left">
-                                <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-[10px] mr-3 uppercase">
-                                  {c.name[0]}
-                                </div>
+                          <div className="max-h-56 overflow-y-auto">
+                            {searchedCustomers.map((c) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center justify-between group transition-colors border-b border-gray-50 last:border-0"
+                                onClick={() => {
+                                  setCustomerId(c.id);
+                                  setIsDropdownOpen(false);
+                                  setSearchQuery("");
+                                }}
+                              >
                                 <div>
-                                  <div className="text-sm font-bold text-gray-800">{c.name}</div>
-                                  <div className="text-[10px] text-gray-400 font-medium">{c.phone || "-"}</div>
+                                  <div className="text-sm font-bold text-gray-900 group-hover:text-blue-600">{c.name}</div>
+                                  <div className="text-[10px] text-gray-400 font-medium">{c.phone}</div>
                                 </div>
-                              </div>
-                              {customerId === c.id && <Check className="w-4 h-4 text-blue-500" />}
-                            </button>
-                          ))
-                        ) : (
-                          <div className="px-4 py-8 text-center">
-                            <p className="text-xs text-gray-400 italic">검색 결과가 없습니다.</p>
-                            <button 
-                              type="button"
-                              onClick={() => setIsNewCustomerMode(true)}
-                              className="mt-2 text-xs font-bold text-blue-600 hover:underline"
-                            >
-                              신규 고객으로 등록하기
-                            </button>
+                                {customerId === c.id && <Check className="w-4 h-4 text-blue-600" />}
+                              </button>
+                            ))}
                           </div>
+                        ) : (
+                          <div className="px-4 py-6 text-center text-xs text-gray-400 font-medium">검색 결과가 없습니다.</div>
                         )}
                       </div>
                     )}
@@ -309,180 +284,169 @@ export default function VisitModal({
                 )}
               </div>
             ) : (
-              <div className="space-y-2 pt-2 border-t border-gray-200 mt-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    placeholder="이름"
-                    className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                    value={newCustomerName}
-                    onChange={(e) => setNewCustomerName(e.target.value)}
-                    required={isNewCustomerMode}
-                  />
-                  <input
-                    type="tel"
-                    placeholder="연락처"
-                    className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                    value={newCustomerPhone}
-                    onChange={(e) => setNewCustomerPhone(e.target.value)}
-                    required={isNewCustomerMode}
-                  />
-                </div>
+              <div className="grid grid-cols-2 gap-3 mt-2 animate-in fade-in slide-in-from-top-2">
+                <input
+                  type="text"
+                  placeholder="고객 이름"
+                  className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
+                  value={newCustomerName}
+                  onChange={(e) => setNewCustomerName(e.target.value)}
+                />
+                <input
+                  type="tel"
+                  placeholder="연락처"
+                  className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
+                  value={newCustomerPhone}
+                  onChange={(e) => setNewCustomerPhone(e.target.value)}
+                />
               </div>
             )}
           </div>
 
-          {/* 시술 선택 칩 */}
-          {services.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                시술 선택 (복수 선택 가능)
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {services.map((s) => {
-                  const isSelected = selectedServices.some(
-                    (sel) => sel.id === s.id,
-                  );
-                  return (
-                    <button
-                      type="button"
-                      key={s.id}
-                      onClick={() => toggleService(s)}
-                      className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-sm font-medium border transition-all
-                        ${
-                          isSelected
-                            ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200"
-                            : "bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600"
-                        }`}
-                    >
-                      {s.name}
-                      <span
-                        className={`ml-1.5 text-xs ${isSelected ? "text-blue-100" : "text-gray-400"}`}
-                      >
-                        {formatCurrency(s.price)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedServices.length > 0 && (
-                <p className="mt-2 text-xs text-blue-600 font-medium">
-                  선택 합계:{" "}
-                  {formatCurrency(selectedServices
-                    .reduce((acc, s) => acc + s.price, 0))}
-                  (금액은 아래에서 수정 가능)
-                </p>
-              )}
+          {/* 시술 항목 */}
+          <div className="space-y-3">
+            <label className="text-sm font-bold text-gray-700 tracking-tight flex items-center">시술 내역</label>
+            <div className="flex flex-wrap gap-2">
+              {services.map((s) => {
+                const isSelected = selectedServices.some((sel) => sel.id === s.id);
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => toggleService(s)}
+                    className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-bold border transition-all
+                      ${isSelected ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100" : "bg-white text-gray-600 border-gray-200 hover:border-blue-400 hover:text-blue-600"}`}
+                  >
+                    {s.name}
+                    <span className={`ml-1.5 opacity-50 ${isSelected ? "text-white" : "text-gray-400"}`}>{formatCurrency(s.price)}</span>
+                  </button>
+                );
+              })}
             </div>
-          )}
+            {selectedServices.length > 0 && (
+              <div className="flex items-center px-3 py-2 bg-blue-50/50 rounded-xl border border-blue-100/50">
+                <span className="text-[10px] font-black text-blue-600 uppercase mr-3">선택 합계</span>
+                <span className="text-sm font-extrabold text-blue-700">
+                  {formatCurrency(selectedServices.reduce((acc, s) => acc + s.price, 0))}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setServiceTotal(selectedServices.reduce((acc, s) => acc + s.price, 0).toString())}
+                  className="ml-auto text-[10px] font-black text-white bg-blue-600 px-3 py-1.5 rounded-lg active:scale-95 transition-transform shadow-sm"
+                >
+                  금액 반영
+                </button>
+              </div>
+            )}
+          </div>
 
-          {/* 날짜 + 결제 금액 */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6 items-end">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                방문 날짜 *
-              </label>
+              <label className="block text-sm font-bold text-gray-700 mb-2 tracking-tight">방문 날짜 *</label>
               <input
                 type="date"
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all shadow-sm"
                 value={visitedAt}
                 onChange={(e) => setVisitedAt(e.target.value)}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                결제 금액 (원) *
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="직접 입력 또는 자동 합산"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                required
-              />
-              {pointsUsed && parseInt(pointsUsed) > 0 && (
-                <p className="mt-1.5 text-[10px] text-gray-400 font-medium flex items-center">
-                  <span className="w-1 h-1 bg-gray-300 rounded-full mr-1"></span>
-                  포인트 사용이 적용된 <span className="text-gray-600 font-bold mx-0.5">최종 결제 금액</span>을 입력해주세요.
-                </p>
-              )}
+              <label className="block text-sm font-bold text-gray-700 mb-2 tracking-tight">결제 수단 *</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("card")}
+                  className={`py-3 text-xs font-bold rounded-2xl transition-all ${paymentMethod === "card" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" : "bg-white text-gray-400 border border-gray-200 hover:bg-gray-50"}`}
+                >
+                  카드
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("cash")}
+                  className={`py-3 text-xs font-bold rounded-2xl transition-all ${paymentMethod === "cash" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-100" : "bg-white text-gray-400 border border-gray-200 hover:bg-gray-50"}`}
+                >
+                  현금
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* 결제 수단 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              결제 수단 *
-            </label>
-            <div className="flex space-x-3">
-              <label
-                className={`flex-1 py-2 border rounded-lg text-center cursor-pointer transition-colors ${paymentMethod === "card" ? "bg-blue-50 border-blue-500 text-blue-700 font-medium" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-              >
+          {/* 차감 흐름 UI */}
+          <div className="p-5 bg-gray-50 rounded-3xl border border-gray-200 space-y-4 shadow-inner">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-gray-400 mb-2 tracking-widest uppercase text-center flex items-center justify-center">
+                  <Calculator className="w-3 h-3 mr-1" />
+                  총 시술 정가
+                </label>
                 <input
-                  type="radio"
-                  value="card"
-                  checked={paymentMethod === "card"}
-                  onChange={() => setPaymentMethod("card")}
-                  className="sr-only"
+                  type="number"
+                  placeholder="24,000"
+                  className="w-full px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-gray-600 text-center shadow-sm"
+                  value={serviceTotal}
+                  onChange={(e) => setServiceTotal(e.target.value)}
                 />
-                💳 카드
-              </label>
-              <label
-                className={`flex-1 py-2 border rounded-lg text-center cursor-pointer transition-colors ${paymentMethod === "cash" ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-medium" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-              >
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-blue-500 mb-2 tracking-widest uppercase text-center">실 매출 결제액 *</label>
                 <input
-                  type="radio"
-                  value="cash"
-                  checked={paymentMethod === "cash"}
-                  onChange={() => setPaymentMethod("cash")}
-                  className="sr-only"
+                  type="number"
+                  placeholder="19,000"
+                  className="w-full px-4 py-3 bg-white border border-blue-50 rounded-2xl text-sm font-black text-blue-700 text-center shadow-sm ring-2 ring-blue-500/10"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  required
                 />
-                💵 현금 / 계좌
-              </label>
+              </div>
             </div>
+
+            {serviceTotal && pointsUsed && parseInt(pointsUsed) > 0 && (
+              <div className="flex items-center justify-between text-[11px] font-bold px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm animate-in zoom-in-95 duration-300">
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-400">{parseInt(serviceTotal).toLocaleString()}원(정가)</span>
+                  <span className="text-gray-300">/</span>
+                  <span className="text-rose-500">-{parseInt(pointsUsed).toLocaleString()}P(차감)</span>
+                </div>
+                <div className="flex items-center space-x-1.5 text-blue-600 text-xs font-black">
+                  <span className="text-gray-300">=</span>
+                  <span>최종 {parseInt(paymentAmount).toLocaleString()}원 결제</span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* 포인트 적립/사용 */}
-          <div className="grid grid-cols-2 gap-4 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-            <div>
-              <label className="block text-xs font-bold text-blue-700 mb-1.5">
-                💰 적립 포인트
-              </label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-blue-50/50 rounded-3xl border border-blue-100/50">
+              <label className="block text-[10px] font-black text-blue-700 mb-2 tracking-widest uppercase">포인트 적립</label>
               <input
                 type="number"
-                className="w-full p-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                placeholder="0"
+                className="w-full px-3 py-2.5 bg-white border border-blue-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
                 value={pointsEarned}
                 onChange={(e) => setPointsEarned(e.target.value)}
               />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-red-700 mb-1.5">
-                🎫 사용 포인트 (보유: {(selectedCustomer?.total_points || 0).toLocaleString()}P)
+            <div className="p-4 bg-rose-50/50 rounded-3xl border border-rose-100/50">
+              <label className="block text-[10px] font-black text-rose-700 mb-2 tracking-widest uppercase leading-tight">
+                포인트 사용 <span className="opacity-50 text-[9px] font-medium leading-none block mt-0.5">({(selectedCustomer?.total_points || 0).toLocaleString()}P 보유)</span>
               </label>
               <input
                 type="number"
-                className="w-full p-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
-                placeholder="0"
+                className="w-full px-3 py-2.5 bg-white border border-rose-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-rose-500 outline-none transition-all shadow-sm"
                 value={pointsUsed}
                 onChange={(e) => setPointsUsed(e.target.value)}
               />
               {parseInt(pointsUsed) > (selectedCustomer?.total_points || 0) && (
-                <p className="text-[10px] text-red-500 mt-1 font-medium">잔액이 부족합니다.</p>
+                <p className="text-[9px] text-rose-500 mt-1.5 font-black animate-pulse">포인트 잔액이 부족합니다.</p>
               )}
             </div>
           </div>
 
-          {/* 메모 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              메모 (선택)
-            </label>
+            <label className="block text-sm font-bold text-gray-700 mb-2 tracking-tight">메모 (선택)</label>
             <textarea
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-              placeholder="시술 특이사항, 추가 요청 사항 등"
+              className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none resize-none text-sm font-medium transition-all"
+              placeholder="특이사항이나 세부 요청 사항을 입력하세요."
               rows={2}
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
@@ -491,23 +455,22 @@ export default function VisitModal({
         </form>
 
         {/* 하단 버튼 */}
-        <div className="flex space-x-3 p-4 border-t border-gray-100 shrink-0">
+        <div className="px-6 py-5 border-t border-gray-100 flex space-x-3 bg-white shrink-0">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex-1 py-3.5 border border-gray-200 text-gray-500 font-bold rounded-2xl hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50"
           >
             취소
           </button>
           <button
-            form=""
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (parseInt(pointsUsed) > (selectedCustomer?.total_points || 0))}
             onClick={handleSubmit}
-            className="flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+            className="flex-[2] py-3.5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 disabled:opacity-50 disabled:shadow-none"
           >
-            {isSubmitting ? "저장 중..." : "기록 저장"}
+            {isSubmitting ? "기록 중..." : (initialData ? "기록 수정 완료" : "방문 기록 저장")}
           </button>
         </div>
       </div>
