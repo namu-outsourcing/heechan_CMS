@@ -407,9 +407,9 @@ export default function Dashboard() {
               Service Share
             </div>
           </div>
-          <div className="h-64 w-full relative">
+          <div className="h-80 w-full relative">
             {/* 도넛 중앙 텍스트 */}
-            <div className="absolute top-1/2 left-[32%] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+            <div className="absolute top-1/2 left-[30%] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
               <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Total</div>
               <div className="text-xl font-black text-gray-800 leading-none">
                 {Math.round(serviceStats.reduce((sum, s) => sum + s.value, 0) / 10000)}<span className="text-xs font-bold text-gray-400 ml-0.5">만</span>
@@ -461,11 +461,18 @@ export default function Dashboard() {
                     align="right" 
                     layout="vertical"
                     iconType="circle"
+                    wrapperStyle={{
+                      paddingLeft: '20px',
+                      maxHeight: '100%',
+                      overflowY: 'auto',
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
+                    }}
                     formatter={(value, entry: any) => {
                       const percent = entry.payload?.percent;
                       const displayPercent = isNaN(percent) ? 0 : Math.round(percent * 100);
                       return (
-                        <span className={`text-xs font-bold transition-colors ${activeServiceIdx === serviceStats.findIndex(s => s.name === value) ? 'text-indigo-600' : 'text-gray-500'}`}>
+                        <span className={`text-[11px] font-bold transition-colors inline-block pb-1 ${activeServiceIdx === serviceStats.findIndex(s => s.name === value) ? 'text-indigo-600' : 'text-gray-500'}`}>
                           {value} ({displayPercent}%)
                         </span>
                       );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 
@@ -10,12 +10,6 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  // 인증 비활성화 기간 동안 로그인 페이지 자동 통과
-  useEffect(() => {
-    console.log("인증 비활성화 상태: 자동으로 고객 관리 페이지로 이동합니다.");
-    navigate("/customers");
-  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useCustomerStore } from "../../hooks/useCustomers";
 import { useServiceStore } from "../../hooks/useServices";
 import { X, UserPlus, Search, Check } from "lucide-react";
@@ -51,9 +51,34 @@ export default function VisitModal({
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- 고객 검색 기능 (고도화) ---
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Esc 키 및 외부 클릭 핸들러
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isDropdownOpen]);
 
   // 현재 선택된 고객 객체
   const selectedCustomer = useMemo(() => 
@@ -215,7 +240,7 @@ export default function VisitModal({
                   </div>
                 ) : (
                   /* 검색 입력 상태 */
-                  <div className="relative">
+                  <div className="relative" ref={searchContainerRef}>
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
@@ -270,13 +295,6 @@ export default function VisitModal({
                           </div>
                         )}
                       </div>
-                    )}
-                    {/* 외부 클릭 닫기용 투명 배경 */}
-                    {isDropdownOpen && (
-                      <div 
-                        className="fixed inset-0 z-[-1]" 
-                        onClick={() => setIsDropdownOpen(false)}
-                      />
                     )}
                   </div>
                 )}

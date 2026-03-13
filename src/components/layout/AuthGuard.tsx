@@ -1,19 +1,46 @@
-import { useEffect, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { supabase } from "../../lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   children: ReactNode;
 }
 
 export default function AuthGuard({ children }: Props) {
-  // 개발 및 디버깅을 위해 일시적으로 인증을 항상 허용함
-  useEffect(() => {
-    console.log("⚠️ AuthGuard: 인증 기능이 일시적으로 비활성화된 상태입니다.");
-    // 기존 인증 로직은 유지하되 로깅만 수행 (필요 시 나중에 복구 가능)
-    supabase.auth.getSession().then(({ data }) => {
-       console.log("현재 세션 상태 (디버깅):", !!data.session);
-    });
-  }, []);
+  const navigate = useNavigate();
+  const [session, setSession] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  return <>{children}</>;
+  useEffect(() => {
+    // 1. 초기 세션 체크
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+      if (!session) {
+        navigate("/login");
+      }
+    });
+
+    // 2. 인증 상태 변경 감지 리스너
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session) {
+        navigate("/login");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return session ? <>{children}</> : null;
 }
