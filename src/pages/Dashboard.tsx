@@ -254,6 +254,7 @@ export default function Dashboard() {
           total={todayStats.points}
           cardAmount={0}
           cashAmount={0}
+          hideDetails={true}
           icon={<Minus className="w-5 h-5 text-rose-500" />}
         />
         <SalesSummaryCard
