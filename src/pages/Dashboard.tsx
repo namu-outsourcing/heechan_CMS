@@ -41,12 +41,14 @@ import {
 } from "recharts";
 
 const COLORS = [
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
+  "#6366f1", // Indigo
+  "#0ea5e9", // Sky Blue
+  "#10b981", // Emerald
+  "#f59e0b", // Amber
+  "#ef4444", // Red
+  "#8b5cf6", // Violet
+  "#ec4899", // Pink
+  "#14b8a6", // Teal
 ];
 
 export default function Dashboard() {
@@ -411,11 +413,15 @@ export default function Dashboard() {
                     align="right" 
                     layout="vertical"
                     iconType="circle"
-                    formatter={(value, entry: any) => (
-                      <span className="text-gray-600 text-xs font-bold leading-none">
-                        {value} ({Math.round(entry.payload.percent * 100)}%)
-                      </span>
-                    )}
+                    formatter={(value, entry: any) => {
+                      const percent = entry.payload?.percent;
+                      const displayPercent = isNaN(percent) ? 0 : Math.round(percent * 100);
+                      return (
+                        <span className="text-gray-600 text-xs font-bold leading-none">
+                          {value} ({displayPercent}%)
+                        </span>
+                      );
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
