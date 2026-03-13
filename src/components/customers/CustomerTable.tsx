@@ -45,7 +45,7 @@ export default function CustomerTable({
                 <div className="font-medium text-gray-900 group-hover/row:text-blue-600 transition-colors">
                   {c.name}
                 </div>
-                <div className="text-xs text-gray-500">{c.phone}</div>
+                <div className="text-xs text-gray-400 font-medium">{c.phone || "-"}</div>
               </td>
               <td className="px-4 py-3">
                 {c.memo ? (

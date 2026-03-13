@@ -39,7 +39,7 @@ export default function Customers() {
   const filteredCustomers = customers.filter(
     (c) =>
       c.name.includes(searchTerm) ||
-      c.phone.replace(/-/g, "").includes(searchTerm.replace(/-/g, "")),
+      (c.phone || "").replace(/-/g, "").includes(searchTerm.replace(/-/g, "")),
   );
 
   const handleOpenAddModal = () => {

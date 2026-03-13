@@ -38,8 +38,8 @@ export default function CustomerModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim())
-      return alert("이름과 연락처를 입력해주세요.");
+    if (!name.trim())
+      return alert("성함을 입력해주세요.");
 
     setIsSubmitting(true);
     const success = await onSave({ name, phone, memo });
@@ -80,7 +80,7 @@ export default function CustomerModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              연락처 *
+              연락처 (선택)
             </label>
             <input
               type="tel"
@@ -88,7 +88,6 @@ export default function CustomerModal({
               placeholder="예: 010-1234-5678"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              required
             />
           </div>
 

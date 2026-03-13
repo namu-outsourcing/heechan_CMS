@@ -4,7 +4,7 @@
 CREATE TABLE customers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  phone TEXT NOT NULL,
+  phone TEXT,
   visit_cycle INT NOT NULL CHECK (visit_cycle IN (2, 3, 4)), -- 기준: 2주, 3주, 4주
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
