@@ -27,6 +27,7 @@ export default function VisitTable({ visits, onEdit, onDelete }: Props) {
             <th className="px-4 py-3">시술 내용</th>
             <th className="px-4 py-3">결제 수단</th>
             <th className="px-4 py-3">결제 금액</th>
+            <th className="px-4 py-3 text-center">포인트</th>
             <th className="px-4 py-3 text-right">관리</th>
           </tr>
         </thead>
@@ -75,6 +76,21 @@ export default function VisitTable({ visits, onEdit, onDelete }: Props) {
               </td>
               <td className="px-4 py-3 text-gray-900 font-medium">
                 {v.payment_amount.toLocaleString()}원
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex flex-col items-center gap-1">
+                  {(v.points_earned ?? 0) > 0 && (
+                    <span className="inline-flex px-1.5 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-600 rounded border border-blue-100 whitespace-nowrap">
+                      +{(v.points_earned ?? 0).toLocaleString()}P
+                    </span>
+                  )}
+                  {(v.points_used ?? 0) > 0 && (
+                    <span className="inline-flex px-1.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-600 rounded border border-red-100 whitespace-nowrap">
+                      -{(v.points_used ?? 0).toLocaleString()}P
+                    </span>
+                  )}
+                  {(!v.points_earned && !v.points_used) && <span className="text-gray-300 text-[10px]">-</span>}
+                </div>
               </td>
               <td className="px-4 py-3 border-t-0 text-right whitespace-nowrap">
                 <button
